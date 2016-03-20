@@ -18,7 +18,7 @@ public abstract class BaseURL {
     private String referral;
     private String rawURL;
     private String normalizeURL;
-    private Long   discoveryDate;
+    private String discoverDate;
 
     public String getReferral() {
         return referral;
@@ -44,11 +44,7 @@ public abstract class BaseURL {
         this.normalizeURL = normalizeURL;
     }
 
-    public Long getDiscoveryDate() {
-        return discoveryDate;
-    }
+    public String getDiscoverDate() {return discoverDate;}
 
-    public void setDiscoveryDate(Long discoveryDate) {
-        this.discoveryDate = discoveryDate;
-    }
+    public void setDiscoverDate(String discoverDate) {this.discoverDate = discoverDate;}
 }

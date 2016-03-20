@@ -7,8 +7,7 @@ public class FeedURL extends BaseURL {
 
 
     private String title;
-    private Long   publicationDate;
-
+    private String publicationDate;
     private String headlines;
 
 
@@ -20,15 +19,6 @@ public class FeedURL extends BaseURL {
         this.title = title;
     }
 
-    public Long getPublicationDate() {
-        return publicationDate;
-    }
-
-    public void setPublicationDate(Long publicationDate) {
-        this.publicationDate = publicationDate;
-    }
-
-
     public String getHeadlines() {
         return headlines;
     }
@@ -38,6 +28,7 @@ public class FeedURL extends BaseURL {
     }
 
 
+    public String getPublicationDate() {return publicationDate;}
 
-
+    public void setPublicationDate(String publicationDate) {this.publicationDate = publicationDate;}
 }

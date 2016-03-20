@@ -94,6 +94,13 @@ public abstract class Main {
             if (cmd.hasOption("p")) {
                 port = ((Number) cmd.getParsedOptionValue("p")).intValue();
             }
+
+            Map<String, String> env = System.getenv();
+            if(env.containsKey("PORT")){
+                port = Integer.parseInt( env.get("PORT"));
+            }
+
+
         }catch (ParseException e ){
             logger.fatal("Unable to parse port number:" +cmd.getOptionValue("p"));
             return;

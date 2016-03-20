@@ -7,16 +7,12 @@ import ch.newsriver.data.url.BaseURL;
  */
 public class HTML {
 
-    BaseURL refferal;
+    BaseURL referral;
     String  rawHTML;
-
-    public BaseURL getRefferal() {
-        return refferal;
-    }
-
-    public void setRefferal(BaseURL refferal) {
-        this.refferal = refferal;
-    }
+    String  title;
+    String  encoding;
+    String  language;
+    String  url;
 
     public String getRawHTML() {
         return rawHTML;
@@ -24,5 +20,45 @@ public class HTML {
 
     public void setRawHTML(String rawHTML) {
         this.rawHTML = rawHTML;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getEncoding() {
+        return encoding;
+    }
+
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public BaseURL getReferral() {
+        return referral;
+    }
+
+    public void setReferral(BaseURL referral) {
+        this.referral = referral;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }
