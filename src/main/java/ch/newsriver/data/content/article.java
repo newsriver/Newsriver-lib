@@ -1,5 +1,6 @@
 package ch.newsriver.data.content;
 
+import ch.newsriver.data.publisher.Publisher;
 import ch.newsriver.data.url.BaseURL;
 
 import java.util.LinkedList;
@@ -19,7 +20,7 @@ public class Article {
     String          text;
     String          url;
     List<Element>   elements = new LinkedList<>();
-    Publisher       publisher;
+    Publisher publisher;
     List<BaseURL>   referrals = new LinkedList<>();
 
 
