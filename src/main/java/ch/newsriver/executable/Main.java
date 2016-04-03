@@ -29,7 +29,7 @@ public abstract class Main {
     public abstract void shutdown();
     public abstract void start();
 
-    static HashMap<String,SortedMap<Long,Long>> metrics = new HashMap<String,SortedMap<Long,Long>>();
+    protected static HashMap<String,SortedMap<Long,Long>> metrics = new HashMap<String,SortedMap<Long,Long>>();
 
     static Console webConsole;
 
@@ -37,7 +37,11 @@ public abstract class Main {
         return DEFAUTL_PORT;
     }
 
-    public Main(String[] args, Options options){
+    protected static int getPort(){
+        return port;
+    }
+
+    public Main(String[] args, Options options, boolean runConsole){
         instance = this;
 
 
@@ -108,12 +112,14 @@ public abstract class Main {
 
         System.out.print(getManifest());
 
-        try {
-            webConsole = new Console(port,metrics);
-            webConsole.start();
-        } catch (IOException ex) {
-            logger.fatal("Unable to bind http port:" + port + "\n"+ ex.getLocalizedMessage());
-            return;
+        if(runConsole) {
+            try {
+                webConsole = new Console(port, metrics);
+                webConsole.start();
+            } catch (IOException ex) {
+                logger.fatal("Unable to bind http port:" + port + "\n" + ex.getLocalizedMessage());
+                return;
+            }
         }
 
         instance.start();

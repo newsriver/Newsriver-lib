@@ -21,7 +21,9 @@ public class RedisPoolUtil {
 
     public enum DATABASES {
 
-        VISITED_URLS(1);
+        VISITED_URLS(1),
+        RESOLVED_URLS(2),
+        ALEXA_CACHE(16);
 
         DATABASES(int code) {
             this.code = code;

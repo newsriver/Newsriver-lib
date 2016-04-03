@@ -1,19 +1,16 @@
-package ch.newsriver.data.publisher;
+package ch.newsriver.data.website.alexa;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Created by eliapalme on 22/03/16.
+ * Created by eliapalme on 03/04/16.
  */
-public class SiteInfo {
-
+public class AlexaSiteInfo {
 
     Long globalRank;
     Map<String,Long> countryRank = new TreeMap<>();
     String country;
-    Long uniqueVisitors;
     String owner;
     String title;
     String description;
@@ -44,14 +41,6 @@ public class SiteInfo {
 
     public void setCountry(String country) {
         this.country = country;
-    }
-
-    public Long getUniqueVisitors() {
-        return uniqueVisitors;
-    }
-
-    public void setUniqueVisitors(Long uniqueVisitors) {
-        this.uniqueVisitors = uniqueVisitors;
     }
 
     public String getOwner() {
@@ -102,4 +91,5 @@ public class SiteInfo {
     public void setOnlineSince(String onlineSince) {
         this.onlineSince = onlineSince;
     }
+
 }

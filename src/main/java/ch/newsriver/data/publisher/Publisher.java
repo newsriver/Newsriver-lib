@@ -1,5 +1,7 @@
 package ch.newsriver.data.publisher;
 
+import ch.newsriver.data.website.alexa.AlexaSiteInfo;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,7 +14,7 @@ public class Publisher {
     String domainName;
     String country;
     String icon;
-    SiteInfo siteInfo;
+    AlexaSiteInfo siteInfo;
     Set<String> hosts = new HashSet<>();
 
     public String getDomainName() {
@@ -47,11 +49,11 @@ public class Publisher {
         this.icon = icon;
     }
 
-    public SiteInfo getSiteInfo() {
+    public AlexaSiteInfo getSiteInfo() {
         return siteInfo;
     }
 
-    public void setSiteInfo(SiteInfo siteInfo) {
+    public void setSiteInfo(AlexaSiteInfo siteInfo) {
         this.siteInfo = siteInfo;
     }
 
