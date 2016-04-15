@@ -2,6 +2,7 @@ package ch.newsriver.data.content;
 
 import ch.newsriver.data.publisher.Publisher;
 import ch.newsriver.data.url.BaseURL;
+import ch.newsriver.website.WebSite;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -16,11 +17,10 @@ public class Article {
     String          discoverDate;
     String          title;
     String          language;
-    String          html;
     String          text;
     String          url;
     List<Element>   elements = new LinkedList<>();
-    Publisher publisher;
+    WebSite         website;
     List<BaseURL>   referrals = new LinkedList<>();
 
 
@@ -56,14 +56,6 @@ public class Article {
         this.language = language;
     }
 
-    public String getHtml() {
-        return html;
-    }
-
-    public void setHtml(String html) {
-        this.html = html;
-    }
-
     public String getText() {
         return text;
     }
@@ -92,11 +84,11 @@ public class Article {
 
     public void setId(String id) {this.id = id;}
 
-    public Publisher getPublisher() {return publisher;}
-
-    public void setPublisher(Publisher publisher) {this.publisher = publisher;}
-
     public List<BaseURL> getReferrals() {return referrals;}
 
     public void setReferrals(List<BaseURL> referrals) {this.referrals = referrals;}
+
+    public WebSite getWebsite() {return website;}
+
+    public void setWebsite(WebSite website) {this.website = website;}
 }

@@ -1,7 +1,6 @@
-package ch.newsriver.data.website;
+package ch.newsriver.website;
 
 import ch.newsriver.dao.ElasticsearchPoolUtil;
-import ch.newsriver.data.publisher.Publisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,7 +38,7 @@ public class WebSiteFactory {
         client = ElasticsearchPoolUtil.getInstance().getClient();
         WebSite webSite = null;
         try {
-            GetResponse response = client.prepareGet("newsriver-website", "website", host).execute().actionGet();
+            GetResponse response = client.prepareGet("newsriver-website", "website", host.toLowerCase().trim()).execute().actionGet();
             if (response.isExists()) {
                 try {
                     webSite = mapper.readValue(response.getSourceAsString(),WebSite.class);

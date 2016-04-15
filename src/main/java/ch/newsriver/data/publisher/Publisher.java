@@ -1,9 +1,8 @@
 package ch.newsriver.data.publisher;
 
-import ch.newsriver.data.website.alexa.AlexaSiteInfo;
+import ch.newsriver.website.alexa.AlexaSiteInfo;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**

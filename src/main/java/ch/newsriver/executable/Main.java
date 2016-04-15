@@ -23,96 +23,78 @@ public abstract class Main {
 
     private static final Logger logger = LogManager.getLogger(Main.class);
     private static final SimpleDateFormat fmt = new SimpleDateFormat("'Current time: ' yyyy-MM-dd HH:mm:ssZ");
-    private static int port;
-
-    private static Main instance;
-    public abstract void shutdown();
-    public abstract void start();
-
-    protected static HashMap<String,SortedMap<Long,Long>> metrics = new HashMap<String,SortedMap<Long,Long>>();
-
+    protected static HashMap<String, SortedMap<Long, Long>> metrics = new HashMap<String, SortedMap<Long, Long>>();
     static Console webConsole;
+    private static Main instance;
+    private CommandLine cmd = null;
+    private String pidFile;
+    private String instanceName = "stand-alone";
+    private int port;
 
-    public int getDefaultPort(){
-        return DEFAUTL_PORT;
+
+    public static Main getInstance(){
+        return instance;
     }
 
-    protected static int getPort(){
-        return port;
+    public Main(String[] args, boolean runConsole) {
+
+        this(args, null, runConsole);
     }
 
-    public Main(String[] args, Options options, boolean runConsole){
+    public Main(String[] args, List<Option> addOptions, boolean runConsole) {
+
+        Options options = new Options();
+        options.addOption("f", "pidfile", true, "pid file location");
+        options.addOption("n", "name", true, "instance name");
+        options.addOption(Option.builder("p").longOpt("port").hasArg().type(Number.class).desc("port number").build());
+
+        if (addOptions != null) {
+            addOptions.stream().forEach(options1 -> options.addOption(options1));
+        }
+
         instance = this;
 
-
         CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = null;
+
         try {
-            cmd = parser.parse( options, args);
-        }
-        catch( ParseException exp ) {
-            System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
+            cmd = parser.parse(options, args);
+        } catch (ParseException exp) {
+            System.err.println("Parsing failed.  Reason: " + exp.getMessage());
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( "options:", options );
+            formatter.printHelp("options:", options);
             return;
         }
 
 
-        Runtime.getRuntime().addShutdownHook(new Thread()
-        {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
-            public void run()
-            {
+            public void run() {
                 System.out.println("Shutting down!");
-                if(webConsole!=null)webConsole.stop();
+                if (webConsole != null) webConsole.stop();
                 instance.shutdown();
             }
         });
 
+
+        readParameters();
+
         String pid = getPid();
-
-        //GET PID
-        BufferedWriter out = null;
         try {
-
-            String pidFile = "/var/run/Newsriver-pid.pid";
-            if(cmd.hasOption("pidfile")){
-                pidFile = cmd.getOptionValue("pidfile");
-            }
-
             File file = new File(pidFile);
             file.createNewFile();
             FileWriter fstream = new FileWriter(file, false);
-            out = new BufferedWriter(fstream);
-            out.write(pid);
-        } catch (Exception e) {
+            try (BufferedWriter out = new BufferedWriter(fstream)) {
+                out.write(pid);
+            } catch (Exception e) {
+                logger.error("Unable to save process pid to file", e);
+            }
+        } catch (IOException e) {
             logger.error("Unable to save process pid to file", e);
-        } finally {
-            try {
-                out.close();
-            } catch (Exception e) {};
-        }
-
-        port = getDefaultPort();
-        try {
-            if (cmd.hasOption("p")) {
-                port = ((Number) cmd.getParsedOptionValue("p")).intValue();
-            }
-
-            Map<String, String> env = System.getenv();
-            if(env.containsKey("PORT")){
-                port = Integer.parseInt( env.get("PORT"));
-            }
-
-
-        }catch (ParseException e ){
-            logger.fatal("Unable to parse port number:" +cmd.getOptionValue("p"));
-            return;
         }
 
         System.out.print(getManifest());
 
-        if(runConsole) {
+        if (runConsole) {
             try {
                 webConsole = new Console(port, metrics);
                 webConsole.start();
@@ -126,15 +108,16 @@ public abstract class Main {
 
     }
 
+
+
     private static String getPid() {
 
         String processName = ManagementFactory.getRuntimeMXBean().getName();
-        if(processName.indexOf("@")>-1){
+        if (processName.indexOf("@") > -1) {
             return processName.split("@")[0];
         }
         return null;
     }
-
 
     private static String getVersion() {
         InputStream inputStream = null;
@@ -152,15 +135,15 @@ public abstract class Main {
             return prop.getProperty("version");
 
         } catch (Exception e) {
-            logger.error("Unable to read current version number",e);
+            logger.error("Unable to read current version number", e);
         } finally {
             try {
                 inputStream.close();
-            } catch (Exception e) { }
+            } catch (Exception e) {
+            }
         }
         return null;
     }
-
 
     private static String getWelcome() {
         try {
@@ -183,33 +166,95 @@ public abstract class Main {
         return hostname;
     }
 
-    public static String getManifest(){
+    public static String getManifest() {
 
         StringBuilder result = new StringBuilder();
         result.append(getWelcome()).append("\n");
         result.append("Version: ").append(getVersion()).append("\n");
         result.append("Hostname: ").append(getHostName()).append("\n");
-        result.append("PORT: ").append(port).append("\n");
+        result.append("Instance Name: ").append(instance.getInstanceName()).append("\n");
+        result.append("PORT: ").append(instance.getPort()).append("\n");
         result.append("PID: ").append(getPid()).append("\n");
         result.append(fmt.format(new Date())).append("\n");
 
         return result.toString();
     }
 
-
-
-    public static synchronized void addMetric(String metricName, int count){
+    public static synchronized void addMetric(String metricName, int count) {
 
         long second = Duration.ofNanos(System.nanoTime()).getSeconds();
 
-        SortedMap<Long,Long> units = metrics.get(metricName);
-        if(units == null){
-            units = new  TreeMap<Long,Long>();
+        SortedMap<Long, Long> units = metrics.get(metricName);
+        if (units == null) {
+            units = new TreeMap<Long, Long>();
         }
 
-        units.put(second,units.getOrDefault(second,0l)+count);
-        metrics.put(metricName,units.tailMap(second-60));
+        units.put(second, units.getOrDefault(second, 0l) + count);
+        metrics.put(metricName, units.tailMap(second - 60));
 
+
+    }
+
+    public abstract void shutdown();
+
+    public abstract void start();
+
+    public int getDefaultPort() {
+        return DEFAUTL_PORT;
+    }
+
+    public String getInstanceName() {
+        return this.instanceName;
+    }
+
+    protected int getPort() {
+        return this.port;
+    }
+
+
+    public CommandLine getCmd() {
+        return this.cmd;
+    }
+
+    protected void readParameters() {
+
+        //GET PID
+        BufferedWriter out = null;
+
+        this.pidFile = "/var/run/Newsriver-pid.pid";
+        if (cmd.hasOption("pidfile")) {
+            this.pidFile = cmd.getOptionValue("pidfile");
+        }
+
+
+        this.port = getDefaultPort();
+        try {
+            if (cmd.hasOption("p")) {
+                this.port = ((Number) cmd.getParsedOptionValue("p")).intValue();
+            }
+
+            Map<String, String> env = System.getenv();
+            if (env.containsKey("PORT")) {
+                this.port = Integer.parseInt(env.get("PORT"));
+            }
+        } catch (ParseException e) {
+            logger.fatal("Unable to parse port number:" + cmd.getOptionValue("p"));
+        }
+
+
+        this.instanceName = "stand-alone";
+        try {
+            if (cmd.hasOption("name")) {
+                this.instanceName = cmd.getOptionValue("name");
+            }
+
+            Map<String, String> env = System.getenv();
+            if (env.containsKey("MESOS_TASK_ID")) {
+                this.instanceName = env.get("MESOS_TASK_ID");
+            }
+        } catch (Exception e) {
+            logger.fatal("Unable to retreive instanceId", e);
+        }
 
     }
 

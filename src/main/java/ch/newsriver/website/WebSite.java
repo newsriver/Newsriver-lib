@@ -1,8 +1,8 @@
-package ch.newsriver.data.website;
+package ch.newsriver.website;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import java.util.*;
 
 /**
  * Created by eliapalme on 03/04/16.
@@ -14,7 +14,9 @@ public class WebSite {
     String  domainName;
     boolean ssl;
     int     port;
-    Locale  locale;
+    String  countryName;
+    String  countryCode;
+    Set<String> languages = new HashSet<>();
     Long    rankingGlobal;
     Long    rankingCountry;
     List<String> feeds = new LinkedList<>();
@@ -23,6 +25,7 @@ public class WebSite {
     String  lastUpdate;
     String  canonicalURL;
     List<String> alternativeURLs = new LinkedList<>();
+    List<Double> geoLocation;
 
     public String getName() {
         return name;
@@ -54,14 +57,6 @@ public class WebSite {
 
     public void setPort(int port) {
         this.port = port;
-    }
-
-    public Locale getLocale() {
-        return locale;
-    }
-
-    public void setLocale(Locale locale) {
-        this.locale = locale;
     }
 
     public Long getRankingGlobal() {
@@ -134,5 +129,38 @@ public class WebSite {
 
     public void setAlternativeURLs(List<String> alternativeURLs) {
         this.alternativeURLs = alternativeURLs;
+    }
+
+
+    public Set<String> getLanguages() {
+        return languages;
+    }
+
+    public void setLanguages(Set<String> languages) {
+        this.languages = languages;
+    }
+
+    public String getCountryName() {
+        return countryName;
+    }
+
+    public void setCountryName(String countryName) {
+        this.countryName = countryName;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    public List<Double> getGeoLocation() {
+        return geoLocation;
+    }
+
+    public void setGeoLocation(List<Double> geoLocation) {
+        this.geoLocation = geoLocation;
     }
 }

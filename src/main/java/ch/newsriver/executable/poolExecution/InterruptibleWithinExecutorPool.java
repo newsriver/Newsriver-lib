@@ -1,9 +1,7 @@
-package ch.newsriver.executable;
+package ch.newsriver.executable.poolExecution;
 
-import javax.xml.ws.Response;
 import java.time.Duration;
 import java.util.concurrent.*;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 
@@ -14,26 +12,30 @@ public abstract class InterruptibleWithinExecutorPool extends  ScheduledThreadPo
 
 
     private  ScheduledExecutorService timeoutExecutor= null;
+    private  Duration duration;
 
-
-    public InterruptibleWithinExecutorPool(int corePoolSize){
+    public InterruptibleWithinExecutorPool(int corePoolSize, Duration duration){
         super(corePoolSize);
         timeoutExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+        this.duration = duration;
     }
 
-    public InterruptibleWithinExecutorPool(int corePoolSize, RejectedExecutionHandler handler){
+    public InterruptibleWithinExecutorPool(int corePoolSize,Duration duration, RejectedExecutionHandler handler){
         super(corePoolSize,handler);
         timeoutExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+        this.duration = duration;
     }
 
-    public InterruptibleWithinExecutorPool(int corePoolSize, ThreadFactory threadFactory){
+    public InterruptibleWithinExecutorPool(int corePoolSize,Duration duration, ThreadFactory threadFactory){
         super(corePoolSize,threadFactory);
         timeoutExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+        this.duration = duration;
     }
 
-    public InterruptibleWithinExecutorPool(int corePoolSize, ThreadFactory threadFactory, RejectedExecutionHandler handler){
+    public InterruptibleWithinExecutorPool(int corePoolSize,Duration duration, ThreadFactory threadFactory, RejectedExecutionHandler handler){
         super(corePoolSize,threadFactory,handler);
         timeoutExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+        this.duration = duration;
     }
 
 
@@ -48,7 +50,7 @@ public abstract class InterruptibleWithinExecutorPool extends  ScheduledThreadPo
     }
 
 
-    public static <T> CompletableFuture<T> supplyAsyncInterruptWithin(final Supplier<T> supplier, Duration duration,  InterruptibleWithinExecutorPool pool) {
+    public static <T> CompletableFuture<T> supplyAsyncInterruptExecutionWithin(final Supplier<T> supplier, InterruptibleWithinExecutorPool pool) {
 
         final CompletableFuture<T> cf = new CompletableFuture<T>();
 
@@ -63,20 +65,24 @@ public abstract class InterruptibleWithinExecutorPool extends  ScheduledThreadPo
             }
         });
 
+        return cf;
+    }
 
-        pool.getTimeoutExecutor().schedule(() -> {
-            if (!cf.isDone() && !cf.isCompletedExceptionally() && !cf.isCancelled()) {
-                System.out.println("done:"+cf.isDone()+" int:"+cf.isCompletedExceptionally()+" canc:"+cf.isCancelled());
-                System.out.println("done:"+future.isDone()+" canc:"+future.isCancelled());
+    @Override
+    protected void beforeExecute(Thread t, Runnable r) {
+        super.beforeExecute(t, r);
 
-                future.cancel(true);
-                InterruptedException ex = new InterruptedException("Task did not complete within time.");
-                cf.completeExceptionally(ex);
+        FutureTask cf = (FutureTask) r;
 
+
+        this.getTimeoutExecutor().schedule(() -> {
+            if (!cf.isDone() && !cf.isCancelled()) {
+                //System.out.println("done:"+cf.isDone()+" int:"+cf.isCompletedExceptionally()+" canc:"+cf.isCancelled());
+                cf.cancel(true);
             }
         }, duration.toNanos(), TimeUnit.NANOSECONDS);
 
-        return cf;
+
     }
 
 

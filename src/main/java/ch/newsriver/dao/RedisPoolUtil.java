@@ -23,7 +23,8 @@ public class RedisPoolUtil {
 
         VISITED_URLS(1),
         RESOLVED_URLS(2),
-        ALEXA_CACHE(16);
+        DOWNLOADED_HTMLS(3),
+        ALEXA_CACHE(10);
 
         DATABASES(int code) {
             this.code = code;
@@ -108,11 +109,11 @@ public class RedisPoolUtil {
             poolConfig.setTimeBetweenEvictionRunsMillis(60000);
             // Create the jedisPool
 
-            poolConfig.setTestOnBorrow(true);
+            //TODO: change this to true (I have set it to true because I needed fast connections)
+            poolConfig.setTestOnBorrow(false);
 
             Set<String> sentinels = new HashSet();
             sentinels.addAll(Arrays.asList(redisConfig.getProperty("sentinels").split(",")));
-
             pool = new JedisSentinelPool(redisConfig.getProperty("masterName"), sentinels, poolConfig, redisConfig.getProperty("password-cluster"));
         }
 

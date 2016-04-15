@@ -1,6 +1,8 @@
-package ch.newsriver.data.website.alexa;
+package ch.newsriver.website.alexa;
 
 import ch.newsriver.dao.RedisPoolUtil;
+import org.apache.commons.codec.binary.*;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,7 +11,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import redis.clients.jedis.Jedis;
-import sun.misc.BASE64Encoder;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,13 +21,9 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -55,13 +52,14 @@ public class AlexaClient {
     public AlexaSiteInfo getSiteInfo(String domain){
 
         try {
-            String query = this.buildQuery(domain);
-            String toSign = "GET\n" + SERVICE_HOST + "\n/\n" + query;
-            String signature = this.generateSignature(toSign);
-            String uri = AWS_BASE_URL + query + "&Signature=" + URLEncoder.encode(signature, "UTF-8");
 
 
-            Document document =  makeRequest(uri);
+
+            Document document =  makeRequest(domain);
+
+            if(document == null){
+                return null;
+            }
 
             XPathFactory xpf = XPathFactory.newInstance();
             XPath xp = xpf.newXPath();
@@ -98,9 +96,6 @@ public class AlexaClient {
         }catch (IOException e){
             logger.error("Unable to fetch publisher site info",e);
             return null;
-        }catch (SignatureException e){
-            logger.error("Unable to fetch publisher site info",e);
-            return null;
         }catch (ParserConfigurationException e){
             logger.error("Unable to fetch publisher site info",e);
             return null;
@@ -114,25 +109,37 @@ public class AlexaClient {
 
     }
 
-    public Document makeRequest(String requestUrl) throws IOException, ParserConfigurationException, SAXException {
+    public Document makeRequest(String domain) throws IOException, ParserConfigurationException, SAXException {
+
+        String uri = null;
+        try {
+            String query = this.buildQuery(domain);
+            String toSign = "GET\n" + SERVICE_HOST + "\n/\n" + query;
+            String signature = this.generateSignature(toSign);
+            uri = AWS_BASE_URL + query + "&Signature=" + URLEncoder.encode(signature, "UTF-8");
+
+        }catch (SignatureException e){
+            logger.error("Unable to fetch publisher site info",e);
+            return null;
+        }
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
 
         String xml = null;
-        xml = getAlexaCache(requestUrl);
+        xml = getAlexaCache(domain);
         if(xml!=null){
-            return builder.parse(xml);
+            return builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
         }
 
-        URL url = new URL(requestUrl);
+        URL url = new URL(uri);
         URLConnection conn = url.openConnection();
         try(InputStream in = conn.getInputStream()){
             StringWriter writer = new StringWriter();
             IOUtils.copy(in, writer, "utf-8");
             xml = writer.toString();
-            Document document = builder.parse(xml);
-            setAlexaCache(requestUrl,xml);
+            Document document = builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+            setAlexaCache(domain,xml);
             return document;
         }
     }
@@ -191,7 +198,7 @@ public class AlexaClient {
 
             // base64-encode the hmac
             // result = Encoding.EncodeBase64(rawHmac);
-            result = new BASE64Encoder().encode(rawHmac);
+            result = Base64.encodeBase64String(rawHmac);
 
         } catch (Exception e) {
             throw new SignatureException("Failed to generate HMAC : "
@@ -204,7 +211,7 @@ public class AlexaClient {
 
 
     private final static String REDIS_KEY_PREFIX     = "alexaStite";
-    private final static String REDIS_KEY_VERSION     = "1";
+    private final static String REDIS_KEY_VERSION     = "2";
 
     private String getKey(String url){
         StringBuilder builder = new StringBuilder();
@@ -215,13 +222,18 @@ public class AlexaClient {
 
     public String getAlexaCache(String url){
         try (Jedis jedis = RedisPoolUtil.getInstance().getResource(RedisPoolUtil.DATABASES.ALEXA_CACHE)) {
-            return  jedis.get(getKey(url));
+            return  jedis.get(getKey(new URI(url).getHost().toLowerCase().trim()));
+        }catch (URISyntaxException e){
+            logger.fatal("Invalid Alexa website hostname",e);
+            return null;
         }
     }
 
     public void setAlexaCache(String url,String html){
         try (Jedis jedis = RedisPoolUtil.getInstance().getResource(RedisPoolUtil.DATABASES.ALEXA_CACHE)) {
-            jedis.set(getKey(url),html);
+            jedis.set(getKey(new URI(url).getHost().toLowerCase().trim()),html);
+        }catch (URISyntaxException e){
+            logger.fatal("Invalid Alexa website hostname",e);
         }
     }
 

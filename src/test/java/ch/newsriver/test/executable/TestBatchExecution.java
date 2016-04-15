@@ -1,53 +1,76 @@
 package ch.newsriver.test.executable;
 
-import ch.newsriver.executable.BatchInterruptibleWithinExecutorPool;
-import ch.newsriver.data.url.FeedURL;
-import ch.newsriver.executable.InterruptibleWithinExecutorPool;
-import org.junit.After;
-import org.junit.AfterClass;
+import ch.newsriver.executable.poolExecution.BatchInterruptibleWithinExecutorPool;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertTrue;
 import java.time.Duration;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
 
 /**
  * Created by eliapalme on 15/03/16.
  */
-public class TestBatchExecution extends BatchInterruptibleWithinExecutorPool {
+public class TestBatchExecution {
 
-    public TestBatchExecution(){
-        super(5,5);
-    }
+
+
+
+
+    /*
+    We do test the betch exector as following:
+
+    waitFreeBatchExecutors will block if the queue is bigger than max queue size and will release once the requested number of executors have completed.
+
+    Take a pool of 1 thread and a queue of 10
+    This will allow to get 10 tasks to execute in raw and each will release a semaphore. Task till need 1 sec to execute.
+    Than we ask from another batch of 10, this should not free before all 10 taks have completed.
+    Immediatly after the bactch we try to acqire a semafore of 10 with no wait time, if it fails it means the waitForBatch has filed.
+    * */
 
 
     @Test
-    public void runSingleTask() throws InterruptedException,BatchSizeException{
+    public void runSingleTask() throws InterruptedException,BatchInterruptibleWithinExecutorPool.BatchSizeException {
+
+        int sleep = 100;
+        int sleepMargin = 10;
+        int numberOfThreads = 10;
+        int poolSize = 5;
+        TestBatchInterruptibleWithinExecutorPool pool = new TestBatchInterruptibleWithinExecutorPool(poolSize,numberOfThreads,Duration.ofMillis(sleep));
+
+
 
         Semaphore semaphore = new Semaphore(0);
-/*
-        this.waitFreeBatchExecutors(10);
-        for(int i=0;i<=5;i++){
+        pool.waitFreeBatchExecutors(numberOfThreads);
+
+        //we need to schedule numberOfThreads + poolSize to make sure the queue is full so the next time we call waitFreeBatchExecutors
+        //it will wait till numberOfThreads have finished to execute, this will also ensure the semaphore as numberOfThreads releases.
+
+        for(int i=0;i<numberOfThreads*+poolSize;i++){
+            final int j = i;
             CompletableFuture<String> feature = new CompletableFuture();
             feature = feature.supplyAsync(() -> {
-
-                try {
-                    semaphore.acquire();
-                } catch (InterruptedException e) {
-                }
-
-                return "ok";
-            }, this);
+                    try {
+                        Thread.sleep(sleep - sleepMargin);
+                    }catch (InterruptedException e){
+                        assertNull(e);
+                    }
+                    if(j < numberOfThreads){
+                        semaphore.release();
+                    }
+                    return "ok";
+            }, pool);
         }
-        this.waitFreeBatchExecutors(10);
-        for(int i=0;i<=5;i++){
-            CompletableFuture<String> feature = new CompletableFuture();
-            feature = feature.supplyAsync(() -> {return "ok";}, this);
+        pool.waitFreeBatchExecutors(numberOfThreads);
+        assertTrue(semaphore.tryAcquire(numberOfThreads));
+
+    }
+
+    public static  class  TestBatchInterruptibleWithinExecutorPool extends BatchInterruptibleWithinExecutorPool{
+        public TestBatchInterruptibleWithinExecutorPool(int threads,int batch, Duration duration){
+            super(threads,batch,duration);
+
         }
-*/
-        //assertTrue(feature.isDone());
 
     }
 

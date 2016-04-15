@@ -13,6 +13,7 @@ public class HTML {
     String  encoding;
     String  language;
     String  url;
+    boolean alreadyFetched = false;
 
     public String getRawHTML() {
         return rawHTML;
@@ -60,5 +61,13 @@ public class HTML {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public boolean isAlreadyFetched() {
+        return alreadyFetched;
+    }
+
+    public void setAlreadyFetched(boolean alreadyFetched) {
+        this.alreadyFetched = alreadyFetched;
     }
 }

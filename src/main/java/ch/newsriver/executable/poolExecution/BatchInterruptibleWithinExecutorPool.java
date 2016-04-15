@@ -1,5 +1,6 @@
-package ch.newsriver.executable;
+package ch.newsriver.executable.poolExecution;
 
+import java.time.Duration;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -10,8 +11,8 @@ public class BatchInterruptibleWithinExecutorPool extends InterruptibleWithinExe
 
     private Semaphore availableSlots;
     private int maxQueueSize;
-    protected BatchInterruptibleWithinExecutorPool(int poolSize, int maxQueueSize){
-        super(poolSize);
+    protected BatchInterruptibleWithinExecutorPool(int poolSize, int maxQueueSize,Duration duration){
+        super(poolSize,duration);
         this.maxQueueSize = maxQueueSize;
         availableSlots = new Semaphore(0);
     }
