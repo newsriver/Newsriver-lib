@@ -29,7 +29,7 @@ public class BatchInterruptibleWithinExecutorPool extends InterruptibleWithinExe
         }
 
         if(this.getQueue().size() > maxQueueSize) {
-            availableSlots.acquire(batchSize);
+            availableSlots.acquire((this.getQueue().size()+batchSize) -  maxQueueSize);
         }
     }
 

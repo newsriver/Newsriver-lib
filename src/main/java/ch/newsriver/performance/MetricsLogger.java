@@ -1,5 +1,6 @@
 package ch.newsriver.performance;
 
+import ch.newsriver.data.url.BaseURL;
 import ch.newsriver.executable.Main;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -50,13 +51,13 @@ public class MetricsLogger {
     }
 
 
-    public void logMetric(String name) {
-        logMetric(name, 1);
+    public void logMetric(String name, BaseURL info) {
+        logMetric(name, info,1);
     }
 
-    public void logMetric(String name, int count) {
+    private void logMetric(String name, BaseURL info, int count) {
         try {
-            Metric metric = new Metric(name, className, instance, count);
+            Metric metric = new Metric(name,info, className, instance, count);
             byte[] message = mapper.writeValueAsString(metric).getBytes("utf-8");
             DatagramPacket out = new DatagramPacket(message, message.length, hostAddress, port);
 

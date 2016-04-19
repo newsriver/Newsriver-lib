@@ -34,19 +34,19 @@ public class TestBatchExecution {
 
         int sleep = 100;
         int sleepMargin = 10;
-        int numberOfThreads = 10;
+        int numberRuns = 10;
         int poolSize = 5;
-        TestBatchInterruptibleWithinExecutorPool pool = new TestBatchInterruptibleWithinExecutorPool(poolSize,numberOfThreads,Duration.ofMillis(sleep));
+        TestBatchInterruptibleWithinExecutorPool pool = new TestBatchInterruptibleWithinExecutorPool(poolSize,numberRuns,Duration.ofMillis(sleep));
 
 
 
         Semaphore semaphore = new Semaphore(0);
-        pool.waitFreeBatchExecutors(numberOfThreads);
+        pool.waitFreeBatchExecutors(numberRuns);
 
         //we need to schedule numberOfThreads + poolSize to make sure the queue is full so the next time we call waitFreeBatchExecutors
         //it will wait till numberOfThreads have finished to execute, this will also ensure the semaphore as numberOfThreads releases.
 
-        for(int i=0;i<numberOfThreads*+poolSize;i++){
+        for(int i=0;i<numberRuns*+poolSize;i++){
             final int j = i;
             CompletableFuture<String> feature = new CompletableFuture();
             feature = feature.supplyAsync(() -> {
@@ -55,14 +55,14 @@ public class TestBatchExecution {
                     }catch (InterruptedException e){
                         assertNull(e);
                     }
-                    if(j < numberOfThreads){
+                    if(j < numberRuns){
                         semaphore.release();
                     }
                     return "ok";
             }, pool);
         }
-        pool.waitFreeBatchExecutors(numberOfThreads);
-        assertTrue(semaphore.tryAcquire(numberOfThreads));
+        pool.waitFreeBatchExecutors(numberRuns);
+        assertTrue(semaphore.tryAcquire(numberRuns));
 
     }
 
