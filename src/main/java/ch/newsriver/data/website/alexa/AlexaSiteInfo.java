@@ -1,4 +1,4 @@
-package ch.newsriver.website.alexa;
+package ch.newsriver.data.website.alexa;
 
 import java.util.Map;
 import java.util.TreeMap;

@@ -2,6 +2,7 @@ package ch.newsriver.util;
 
 import ch.newsriver.util.http.HttpClientPool;
 import ch.newsriver.util.normalization.text.InterruptibleCharSequence;
+import com.google.common.base.Function;
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
 import org.apache.commons.lang3.StringUtils;
@@ -13,6 +14,11 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.Wait;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -142,8 +148,22 @@ public class HTMLUtils {
             httpGetRequest.releaseConnection();
         }
 
-
     }
+
+    public static String getDynamicHTML(String url) throws IOException {
+        String html = null;
+        ChromeDriver driver = new ChromeDriver();
+        try {
+            driver.navigate().to(url);
+            Wait<WebDriver> wait = new WebDriverWait(driver, 30);
+            wait.until(_driver -> String.valueOf(((JavascriptExecutor) _driver).executeScript("return document.readyState")).equals("complete"));
+            html = driver.getPageSource();
+        } finally {
+            driver.quit();
+        }
+        return html;
+    }
+
 
 
 }

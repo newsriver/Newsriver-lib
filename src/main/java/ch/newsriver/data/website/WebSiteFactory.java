@@ -1,4 +1,4 @@
-package ch.newsriver.website;
+package ch.newsriver.data.website;
 
 import ch.newsriver.dao.ElasticsearchPoolUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;

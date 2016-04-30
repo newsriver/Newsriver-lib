@@ -1,7 +1,6 @@
-package ch.newsriver.website.alexa;
+package ch.newsriver.data.website.alexa;
 
 import ch.newsriver.dao.RedisPoolUtil;
-import org.apache.commons.codec.binary.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;

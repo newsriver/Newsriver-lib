@@ -11,7 +11,8 @@ repositories {
 }
 
 dependencies {
-        compile 'org.elasticsearch:elasticsearch:2.2.2'
+        compile 'org.seleniumhq.selenium:selenium-java:2.53.0'
+        compile 'org.elasticsearch:elasticsearch:2.3.1'
         compile 'com.fasterxml.jackson.core:jackson-annotations:2.7.2'
         compile 'com.ibm.icu:icu4j:56.1'
         compile 'com.zaxxer:HikariCP:2.4.4'

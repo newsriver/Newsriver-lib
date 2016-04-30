@@ -1,4 +1,4 @@
-package ch.newsriver.website;
+package ch.newsriver.data.website;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
