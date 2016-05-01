@@ -1,6 +1,7 @@
 package ch.newsriver.data.source;
 
 import ch.newsriver.dao.ElasticsearchPoolUtil;
+import ch.newsriver.dao.RedisPoolUtil;
 import ch.newsriver.data.content.Article;
 import ch.newsriver.data.publisher.Publisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,6 +22,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,8 +38,12 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  * Created by eliapalme on 22/03/16.
  */
 public class SourceFactory {
-
-
+    private final static int    SOURCE_TO_FETCH      = 100; //fetch 100 sources at a time
+    private final static int    SOURCE_TO_FETCH_X    = 10;  //fecth from Elastic X times more source and than randobly chose up to SOURCE_TO_FETCH. //IF there are too many conflicts increase this.
+    private final static String REDIS_KEY_PREFIX     = "visSource";
+    private final static String REDIS_KEY_VERSION     = "1";
+    private final static Long   GRACETIME_SECONDS = 60l * 5l; //about 5 min
+    private final static Long   GRACETIME_MILLISECONDS = GRACETIME_SECONDS * 1000l;
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final Logger logger = LogManager.getLogger(SourceFactory.class);
     private static SourceFactory instance;
@@ -80,7 +86,9 @@ public class SourceFactory {
         return -1;
     }
 
-    public Set<String> nextToVisits(int count){
+
+    public Set<String> nextToVisits(){
+
         Client client = null;
         client = ElasticsearchPoolUtil.getInstance().getClient();
         HashSet<String> sources = new HashSet<>();
@@ -92,28 +100,30 @@ public class SourceFactory {
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
                     .setIndices("newsriver-source")
                     .setTypes("source")
-                    .setSize(count*100)
-                    .addSort("lastVisit", SortOrder.DESC)
+                    .setSize(SOURCE_TO_FETCH*SOURCE_TO_FETCH_X)
+                    .addSort("lastVisit", SortOrder.ASC)
                     .addFields("_id","lastVisit")
-                    .setQuery(qb);
+                    .setQuery(qb)
+                    .setPostFilter(QueryBuilders.rangeQuery("lastVisit").lt(new Date().getTime()-GRACETIME_MILLISECONDS));
+
 
 
             SearchResponse response =  searchRequestBuilder.execute().actionGet();
             LinkedList<String> candidate = new LinkedList<>();
-            for(SearchHit i : response.getHits()){
-
-                i.getFields().get("lastVisit");
-            }
             response.getHits().forEach(hit -> candidate.add(hit.getId()));
             Collections.shuffle(candidate);
 
             do {
                 String sourceId = candidate.pollFirst();
 
-                //Here check in Redis if this candidate has been recently checked and in case put back
+               if(isVisited(sourceId)){
+                   logger.warn("Conflict found, the source was already scanned id:"+sourceId);
+                   continue;
+               }
+                setVisited(sourceId);
 
                 sources.add(sourceId);
-            }while(sources.size() < count && !candidate.isEmpty());
+            }while(sources.size() < SOURCE_TO_FETCH && !candidate.isEmpty());
 
 
 
@@ -187,6 +197,26 @@ public class SourceFactory {
 
 
 
+
+    private String getKey(String id){
+        StringBuilder builder = new StringBuilder();
+        return builder.append(REDIS_KEY_PREFIX).append(":")
+                .append(REDIS_KEY_VERSION).append(":")
+                .append(id).toString();
+    }
+
+    public boolean isVisited(String id){
+
+        try (Jedis jedis = RedisPoolUtil.getInstance().getResource(RedisPoolUtil.DATABASES.VISITED_URLS)) {
+            return  jedis.exists(getKey(id));
+        }
+    }
+
+    public void setVisited(String id){
+        try (Jedis jedis = RedisPoolUtil.getInstance().getResource(RedisPoolUtil.DATABASES.VISITED_URLS)) {
+            jedis.set(getKey(id),"","NX","EX",GRACETIME_SECONDS);
+        };
+    }
 
 
 
