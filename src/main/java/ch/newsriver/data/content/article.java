@@ -18,8 +18,8 @@ public class Article {
 
     static public class  ArticleViews {
         static public class PublicView { }
-        static class APIView extends PublicView { }
-        static class Internal extends APIView { }
+        static public class APIView extends PublicView { }
+        static public class Internal extends APIView { }
     }
 
     @JsonView(ArticleViews.APIView.class)
@@ -38,7 +38,7 @@ public class Article {
     String          url;
     @JsonView(ArticleViews.PublicView.class)
     List<Element>   elements = new LinkedList<>();
-    @JsonView(ArticleViews.APIView.class)
+    @JsonView(ArticleViews.PublicView.class)
     WebSite         website;
     @JsonView(ArticleViews.Internal.class)
     List<BaseURL>   referrals = new LinkedList<>();

@@ -33,7 +33,6 @@ public class WebSiteFactory {
 
 
     public WebSite getWebsite(String host){
-
         Client client = null;
         client = ElasticsearchPoolUtil.getInstance().getClient();
         WebSite webSite = null;
@@ -51,7 +50,6 @@ public class WebSiteFactory {
             logger.error("Unable to get publisher from elasticsearch", e);
         } finally {
         }
-
         return webSite;
     }
 

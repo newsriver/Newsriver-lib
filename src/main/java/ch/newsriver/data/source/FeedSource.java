@@ -5,7 +5,6 @@ package ch.newsriver.data.source;
  */
 public class FeedSource extends BaseSource {
 
-
     private String countryName;
     private String countryCode;
     private String region;

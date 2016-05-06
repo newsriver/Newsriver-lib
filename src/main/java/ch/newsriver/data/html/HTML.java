@@ -14,6 +14,7 @@ public class HTML {
     String  language;
     String  url;
     boolean alreadyFetched = false;
+    boolean ajaxBasedFetching = false;
 
     public String getRawHTML() {
         return rawHTML;
@@ -69,5 +70,13 @@ public class HTML {
 
     public void setAlreadyFetched(boolean alreadyFetched) {
         this.alreadyFetched = alreadyFetched;
+    }
+
+    public boolean isAjaxBasedFetching() {
+        return ajaxBasedFetching;
+    }
+
+    public void setAjaxBasedFetching(boolean ajaxBasedFetching) {
+        this.ajaxBasedFetching = ajaxBasedFetching;
     }
 }

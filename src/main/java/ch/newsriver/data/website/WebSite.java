@@ -1,5 +1,7 @@
 package ch.newsriver.data.website;
 
+import ch.newsriver.data.content.Article;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.*;
@@ -10,22 +12,42 @@ import java.util.*;
 public class WebSite {
 
     String  name;
+    @JsonView(Article.ArticleViews.PublicView.class)
     String  hostName;
+    @JsonView(Article.ArticleViews.PublicView.class)
     String  domainName;
+    @JsonView(Article.ArticleViews.Internal.class)
     boolean ssl;
+    @JsonView(Article.ArticleViews.Internal.class)
     int     port;
+    @JsonView(Article.ArticleViews.APIView.class)
     String  countryName;
+    @JsonView(Article.ArticleViews.APIView.class)
     String  countryCode;
+    @JsonView(Article.ArticleViews.APIView.class)
     Set<String> languages = new HashSet<>();
+    @JsonView(Article.ArticleViews.PublicView.class)
     Long    rankingGlobal;
+    @JsonView(Article.ArticleViews.APIView.class)
     Long    rankingCountry;
+    @JsonView(Article.ArticleViews.Internal.class)
     List<String> feeds = new LinkedList<>();
+    @JsonView(Article.ArticleViews.PublicView.class)
     String  description;
+    @JsonView(Article.ArticleViews.PublicView.class)
     String  iconURL;
+    @JsonView(Article.ArticleViews.Internal.class)
     String  lastUpdate;
+    @JsonView(Article.ArticleViews.PublicView.class)
     String  canonicalURL;
+    @JsonView(Article.ArticleViews.APIView.class)
     List<String> alternativeURLs = new LinkedList<>();
+    @JsonView(Article.ArticleViews.APIView.class)
     List<Double> geoLocation;
+
+    @JsonView(Article.ArticleViews.Internal.class)
+    boolean ajaxBased=false;
+
 
     public String getName() {
         return name;
@@ -155,12 +177,18 @@ public class WebSite {
     public void setCountryCode(String countryCode) {
         this.countryCode = countryCode;
     }
-
     public List<Double> getGeoLocation() {
         return geoLocation;
     }
-
     public void setGeoLocation(List<Double> geoLocation) {
         this.geoLocation = geoLocation;
+    }
+
+    public boolean isAjaxBased() {
+        return ajaxBased;
+    }
+
+    public void setAjaxBased(boolean ajaxBased) {
+        this.ajaxBased = ajaxBased;
     }
 }

@@ -23,6 +23,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Transaction;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -41,9 +42,9 @@ public class SourceFactory {
     private final static int    SOURCE_TO_FETCH      = 100; //fetch 100 sources at a time
     private final static int    SOURCE_TO_FETCH_X    = 10;  //fecth from Elastic X times more source and than randobly chose up to SOURCE_TO_FETCH. //IF there are too many conflicts increase this.
     private final static String REDIS_KEY_PREFIX     = "visSource";
-    private final static String REDIS_KEY_VERSION     = "1";
-    private final static Long   GRACETIME_SECONDS = 60l * 5l; //about 5 min
-    private final static Long   GRACETIME_MILLISECONDS = GRACETIME_SECONDS * 1000l;
+    private final static String REDIS_KEY_VERSION     = "4";
+    private final static int   GRACETIME_SECONDS     = 60 * 5; //about 5 min
+    private final static Long   GRACETIME_MILLISECONDS = ((long)GRACETIME_SECONDS) * 1000l;
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final Logger logger = LogManager.getLogger(SourceFactory.class);
     private static SourceFactory instance;
@@ -116,13 +117,11 @@ public class SourceFactory {
             do {
                 String sourceId = candidate.pollFirst();
 
-               if(isVisited(sourceId)){
-                   logger.warn("Conflict found, the source was already scanned id:"+sourceId);
+               if(!setVisited(sourceId)){
+                   logger.warn("Conflict found, the source was recently visited id:"+sourceId);
                    continue;
                }
-                setVisited(sourceId);
-
-                sources.add(sourceId);
+               sources.add(sourceId);
             }while(sources.size() < SOURCE_TO_FETCH && !candidate.isEmpty());
 
 
@@ -205,18 +204,22 @@ public class SourceFactory {
                 .append(id).toString();
     }
 
-    public boolean isVisited(String id){
+    private static String visitedScript = "local current\n" +
+            "current = redis.call(\"incr\",KEYS[1])\n" +
+            "if tonumber(current) == 1 then\n" +
+            "    redis.call(\"expire\",KEYS[1],"+GRACETIME_SECONDS+")\n" +
+            "end\n" +
+            "return current";
 
+    public boolean setVisited(String id){
+        boolean newVisit;
         try (Jedis jedis = RedisPoolUtil.getInstance().getResource(RedisPoolUtil.DATABASES.VISITED_URLS)) {
-            return  jedis.exists(getKey(id));
+            Long counter = (Long) jedis.eval(visitedScript,1,getKey(id));
+            return  counter == 1;
         }
     }
 
-    public void setVisited(String id){
-        try (Jedis jedis = RedisPoolUtil.getInstance().getResource(RedisPoolUtil.DATABASES.VISITED_URLS)) {
-            jedis.set(getKey(id),"","NX","EX",GRACETIME_SECONDS);
-        };
-    }
+
 
 
 

@@ -150,7 +150,7 @@ public class HTMLUtils {
 
     }
 
-    public static String getDynamicHTML(String url) throws IOException {
+    public static String getAjaxBasedHTML(String url) throws IOException {
         String html = null;
         ChromeDriver driver = new ChromeDriver();
         try {

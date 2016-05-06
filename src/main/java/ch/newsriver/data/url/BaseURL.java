@@ -10,7 +10,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include= JsonTypeInfo.As.PROPERTY, property="type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value=FeedURL.class, name="FeedURL"),
-        @JsonSubTypes.Type(value=SourceRSSURL.class, name="SourceRSSURL")
+        @JsonSubTypes.Type(value=SourceRSSURL.class, name="SourceRSSURL"),
+        @JsonSubTypes.Type(value=ManualURL.class, name="ManualURL")
 })
 
 

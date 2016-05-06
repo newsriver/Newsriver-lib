@@ -14,21 +14,15 @@ public class FeedURL extends BaseURL {
     public String getTitle() {
         return title;
     }
-
     public void setTitle(String title) {
         this.title = title;
     }
-
     public String getHeadlines() {
         return headlines;
     }
-
     public void setHeadlines(String headlines) {
         this.headlines = headlines;
     }
-
-
     public String getPublicationDate() {return publicationDate;}
-
     public void setPublicationDate(String publicationDate) {this.publicationDate = publicationDate;}
 }

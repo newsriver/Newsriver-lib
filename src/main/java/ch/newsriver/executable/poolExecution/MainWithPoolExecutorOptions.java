@@ -23,14 +23,15 @@ public abstract class MainWithPoolExecutorOptions extends Main {
 
 
     private static final int DEFAUTL_BATCH_SIZE = 5;
-    private static final int DEFAUTL_POOL_SIZE  = 5;
+    private static final int DEFAUTL_POOL_SIZE = 5;
     private static final int DEFAUTL_QUEUE_SIZE = 10;
-    
+
     private static final LinkedList<Option> additionalOptions = new LinkedList<>();
 
-    private  int poolSize;
-    private  int batchSize;
-    private  int queueSize;
+    private int poolSize;
+    private int batchSize;
+    private int queueSize;
+    private boolean priority;
 
     public int getPoolSize() {
         return poolSize;
@@ -44,15 +45,17 @@ public abstract class MainWithPoolExecutorOptions extends Main {
         return queueSize;
     }
 
+    public boolean isPriority() {return priority;}
 
     static {
         additionalOptions.add(Option.builder("t").longOpt("threads").hasArg().type(Number.class).desc("Number of executor threads").build());
         additionalOptions.add(Option.builder("b").longOpt("batch").hasArg().type(Number.class).desc("Execution batch size").build());
         additionalOptions.add(Option.builder("q").longOpt("queue").hasArg().type(Number.class).desc("Executable task queue size").build());
+        additionalOptions.add(Option.builder("pr").longOpt("priority").desc("Consume and Produce in priority topics").build());
     }
 
-    public MainWithPoolExecutorOptions(String[] args,boolean runConsole){
-        super(args,additionalOptions,runConsole);
+    public MainWithPoolExecutorOptions(String[] args, boolean runConsole) {
+        super(args, additionalOptions, runConsole);
 
     }
 
@@ -60,13 +63,13 @@ public abstract class MainWithPoolExecutorOptions extends Main {
     protected void readParameters() {
 
         super.readParameters();
-        this.poolSize= DEFAUTL_POOL_SIZE;
+        this.poolSize = DEFAUTL_POOL_SIZE;
         try {
             if (this.getCmd().hasOption("t")) {
                 this.poolSize = ((Number) this.getCmd().getParsedOptionValue("t")).intValue();
             }
-        }catch (ParseException e ){
-            logger.fatal("Unable to parse thread pool size:" +this.getCmd().getOptionValue("t"));
+        } catch (ParseException e) {
+            logger.fatal("Unable to parse thread pool size:" + this.getCmd().getOptionValue("t"));
             return;
         }
         this.batchSize = DEFAUTL_BATCH_SIZE;
@@ -74,8 +77,8 @@ public abstract class MainWithPoolExecutorOptions extends Main {
             if (this.getCmd().hasOption("b")) {
                 this.batchSize = ((Number) this.getCmd().getParsedOptionValue("b")).intValue();
             }
-        }catch (ParseException e ){
-            logger.fatal("Unable to parse batch size:" +this.getCmd().getOptionValue("b"));
+        } catch (ParseException e) {
+            logger.fatal("Unable to parse batch size:" + this.getCmd().getOptionValue("b"));
             return;
         }
         this.queueSize = DEFAUTL_QUEUE_SIZE;
@@ -83,10 +86,16 @@ public abstract class MainWithPoolExecutorOptions extends Main {
             if (this.getCmd().hasOption("q")) {
                 this.queueSize = ((Number) this.getCmd().getParsedOptionValue("q")).intValue();
             }
-        }catch (ParseException e ){
-            logger.fatal("Unable to parse executor queue size:" +this.getCmd().getOptionValue("q"));
+        } catch (ParseException e) {
+            logger.fatal("Unable to parse executor queue size:" + this.getCmd().getOptionValue("q"));
             return;
         }
+        this.priority = false;
+
+        if (this.getCmd().hasOption("pr")) {
+            this.priority = true;
+        }
+
 
     }
 
