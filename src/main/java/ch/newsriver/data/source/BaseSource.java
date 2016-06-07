@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include= JsonTypeInfo.As.PROPERTY, property="type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value=FeedSource.class, name="FeedSource"),
+        @JsonSubTypes.Type(value=URLSeedSource.class, name="URLSeedSource"),
 })
 
 public abstract class BaseSource {

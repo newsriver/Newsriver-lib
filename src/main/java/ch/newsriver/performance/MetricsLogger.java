@@ -66,6 +66,8 @@ public class MetricsLogger {
         }
     }
 
+
+
     private void openSocket() {
         try {
             socket = new DatagramSocket();

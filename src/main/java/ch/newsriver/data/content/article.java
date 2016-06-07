@@ -1,9 +1,11 @@
 package ch.newsriver.data.content;
 
+import ch.newsriver.data.metadata.MetaData;
 import ch.newsriver.data.url.BaseURL;
 import ch.newsriver.data.website.WebSite;
 import com.fasterxml.jackson.annotation.JsonView;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -42,6 +44,8 @@ public class Article {
     WebSite         website;
     @JsonView(ArticleViews.Internal.class)
     List<BaseURL>   referrals = new LinkedList<>();
+    @JsonView(ArticleViews.PublicView.class)
+    HashMap<String,MetaData> metadata = new HashMap<>();
 
 
     public String getPublishDate() {
@@ -112,7 +116,15 @@ public class Article {
 
     public void setWebsite(WebSite website) {this.website = website;}
 
-
+    public HashMap<String, MetaData> getMetadata() {
+        return metadata;
+    }
+    public void setMetadata(HashMap<String, MetaData> metadata) {
+        this.metadata = metadata;
+    }
+    public void addMetadata(MetaData metadata) {
+        this.metadata.put(metadata.key(),metadata);
+    }
 }
 
 

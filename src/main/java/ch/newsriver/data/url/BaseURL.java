@@ -11,7 +11,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
         @JsonSubTypes.Type(value=FeedURL.class, name="FeedURL"),
         @JsonSubTypes.Type(value=SourceRSSURL.class, name="SourceRSSURL"),
-        @JsonSubTypes.Type(value=ManualURL.class, name="ManualURL")
+        @JsonSubTypes.Type(value=ManualURL.class, name="ManualURL"),
+        @JsonSubTypes.Type(value=SeedURL.class, name="SeedURL"),
+        @JsonSubTypes.Type(value=LinkURL.class, name="LinkURL")
 })
 
 
@@ -19,7 +21,7 @@ public abstract class BaseURL {
 
     private String referralURL;
     private String rawURL;
-    private String ulr;
+    private String url;
     private String discoverDate;
 
     public String getRawURL() {
@@ -32,9 +34,13 @@ public abstract class BaseURL {
 
     public void setDiscoverDate(String discoverDate) {this.discoverDate = discoverDate;}
 
-    public String getUlr() {return ulr;}
+    public String getUrl() {
+        return url;
+    }
 
-    public void setUlr(String ulr) {this.ulr = ulr;}
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
     public String getReferralURL() {return referralURL;}
 

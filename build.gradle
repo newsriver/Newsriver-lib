@@ -11,6 +11,8 @@ repositories {
 }
 
 dependencies {
+
+        compile 'org.apache.kafka:kafka-streams:0.10.0.0'
         compile 'org.seleniumhq.selenium:selenium-java:2.53.0'
         compile 'org.elasticsearch:elasticsearch:2.3.1'
         compile 'com.fasterxml.jackson.core:jackson-annotations:2.7.2'
