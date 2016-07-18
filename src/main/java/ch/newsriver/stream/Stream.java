@@ -129,11 +129,12 @@ public class Stream<I,O> extends BatchInterruptibleWithinExecutorPool implements
                         if(input== null) return null;
 
                         O output = processor.apply(input);
-
-                        for (String topicName : outboundTopics.keySet()) {
-                            Predicate<O> predicate = outboundTopics.get(topicName);
-                            if (predicate.test(output)) {
-                                producer.send(new ProducerRecord<String, String>(topicName, record.key(), serialize(output)));
+                        if(output!=null) {
+                            for (String topicName : outboundTopics.keySet()) {
+                                Predicate<O> predicate = outboundTopics.get(topicName);
+                                if (predicate.test(output)) {
+                                    producer.send(new ProducerRecord<String, String>(topicName, record.key(), serialize(output)));
+                                }
                             }
                         }
 

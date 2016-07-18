@@ -1,5 +1,7 @@
 package ch.newsriver.util;
 
+import ch.newsriver.data.html.AjaxHTML;
+import ch.newsriver.data.html.HTML;
 import ch.newsriver.util.http.HttpClientPool;
 import ch.newsriver.util.normalization.text.InterruptibleCharSequence;
 import com.google.common.base.Function;
@@ -14,9 +16,13 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -24,9 +30,8 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.net.URL;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,9 +50,9 @@ public class HTMLUtils {
 
 
 
-    public static String getHTML(String url, boolean simulateMobile) throws IOException {
+    public static HTML getHTML(String url, boolean simulateMobile) throws IOException {
 
-
+        HTML html = null;
 
         String userAgent;
 
@@ -75,26 +80,26 @@ public class HTMLUtils {
             }
 
 
-            String html;
+            String htmlSrc;
 
 
 
             if (entity.getContentEncoding() != null) {
 
-                html = EntityUtils.toString(entity);
+                htmlSrc = EntityUtils.toString(entity);
 
             } else if (http_ecoding_found != null && http_ecoding_found.find() && http_ecoding_found.group(1) != null) {
 
-                html = EntityUtils.toString(entity, http_ecoding_found.group(1).toLowerCase());
+                htmlSrc = EntityUtils.toString(entity, http_ecoding_found.group(1).toLowerCase());
 
             } else {
 
                 byte[] rawHTML = EntityUtils.toByteArray(entity);
-                html = new String(rawHTML, "utf-8");
+                htmlSrc = new String(rawHTML, "utf-8");
 
                 boolean econdingFound = false;
 
-                String[] metas = StringUtils.substringsBetween(html, "<meta", ">");
+                String[] metas = StringUtils.substringsBetween(htmlSrc, "<meta", ">");
                 Queue<String> metaQueue = null;
                 if(metas != null){
                     metaQueue =  new LinkedList<>(Arrays.asList(metas));
@@ -105,7 +110,7 @@ public class HTMLUtils {
                 while(metaQueue!=null && !metaQueue.isEmpty()){
                     Matcher meta_ecoding_found = meta_encoding_detector.matcher(new InterruptibleCharSequence(metaQueue.poll()));
                     if (meta_ecoding_found.find() && meta_ecoding_found.group(1) != null) {
-                        html = new String(rawHTML, meta_ecoding_found.group(1).toLowerCase());
+                        htmlSrc = new String(rawHTML, meta_ecoding_found.group(1).toLowerCase());
                         metaQueue.clear();
                         econdingFound=true;
                     }
@@ -114,7 +119,7 @@ public class HTMLUtils {
 
                 Queue<String> xmlsQueue = null;
                 if(!econdingFound){
-                    String[] xmls = StringUtils.substringsBetween(html, "<?xml", ">");
+                    String[] xmls = StringUtils.substringsBetween(htmlSrc, "<?xml", ">");
                     if(xmls != null){
                         xmlsQueue =  new  LinkedList<>(Arrays.asList(xmls));
                     }
@@ -124,7 +129,7 @@ public class HTMLUtils {
                 while(xmlsQueue!=null && !xmlsQueue.isEmpty()){
                     Matcher html_ecoding_found = encoding_detector.matcher(new InterruptibleCharSequence(xmlsQueue.poll()));
                     if (html_ecoding_found.find() && html_ecoding_found.group(1) != null) {
-                        html = new String(rawHTML, html_ecoding_found.group(1).toLowerCase());
+                        htmlSrc = new String(rawHTML, html_ecoding_found.group(1).toLowerCase());
                         xmlsQueue.clear();
                         econdingFound=true;
                     }
@@ -132,13 +137,18 @@ public class HTMLUtils {
 
                 if(!econdingFound){
                     CharsetDetector detector = new CharsetDetector();
-                    detector.setText(html.getBytes());
+                    detector.setText(htmlSrc.getBytes());
                     CharsetMatch match = detector.detect();
-                    html = new String(rawHTML, match.getName());
+                    htmlSrc = new String(rawHTML, match.getName());
                 }
 
             }
             EntityUtils.consumeQuietly(entity);
+
+            if(htmlSrc!=null){
+                html = new HTML();
+                html.setRawHTML(htmlSrc);
+            }
 
             return html;
 
@@ -150,9 +160,9 @@ public class HTMLUtils {
 
     }
 
-    public static String getAjaxBasedHTML(String url) throws IOException {
-        String html = null;
-        ChromeDriver driver = new ChromeDriver();
+    public static AjaxHTML getAjaxBasedHTML(String url) throws IOException {
+        AjaxHTML html = null;
+        /*ChromeDriver driver = new ChromeDriver();
         try {
             driver.navigate().to(url);
             Wait<WebDriver> wait = new WebDriverWait(driver, 30);
@@ -160,7 +170,40 @@ public class HTMLUtils {
             html = driver.getPageSource();
         } finally {
             driver.quit();
+        }*/
+        Set<String> urls = new HashSet<>();
+        String htlmSrc=null;
+        WebDriver driver = new RemoteWebDriver(new URL("http://46.4.71.105:31555"), DesiredCapabilities.phantomjs());
+        try {
+
+            driver.navigate().to(url);
+            Wait<WebDriver> wait = new WebDriverWait(driver, 30);
+            wait.until(_driver -> String.valueOf(((JavascriptExecutor) _driver).executeScript("return document.readyState")).equals("complete"));
+            htlmSrc = driver.getPageSource();
+
+            List<WebElement> elementList = driver.findElements(By.tagName("div"));
+            for (WebElement element : elementList) {
+                if (!element.isDisplayed() || !element.isEnabled()) {
+                    continue;
+                }
+                element.click();
+                wait.until(_driver -> String.valueOf(((JavascriptExecutor) _driver).executeScript("return document.readyState")).equals("complete"));
+                urls.add(driver.getCurrentUrl());
+                driver.navigate().back();
+            }
+        }catch (Exception e){
+            logger.error("Error scanning ajax website",e);
+        } finally {
+            driver.quit();
         }
+
+        if(htlmSrc!=null){
+            html = new AjaxHTML();
+            html.setRawHTML(htlmSrc);
+            html.setDynamicURLs(urls);
+        }
+
+
         return html;
     }
 

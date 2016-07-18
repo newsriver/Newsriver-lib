@@ -75,7 +75,10 @@ public class HttpClientPool {
             }
         }}, new java.security.SecureRandom());
 
-        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslcontext,SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+
+        //Setting the list of algos will force SSL connector to first try with TLSv1.2 as some website no longer support TLSV1
+        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslcontext,new String[]{"TLSv1.2","TLSv1.1","TLSv1","SSLv3"},null,SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create().register("https", sslsf).register("http", new PlainConnectionSocketFactory()).build();
 
 

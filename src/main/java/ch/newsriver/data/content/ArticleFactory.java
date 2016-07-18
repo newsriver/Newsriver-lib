@@ -13,9 +13,14 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.highlight.HighlightField;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -51,23 +56,32 @@ public class ArticleFactory {
 
 
 
-    public List<Article> searchArticles(ArticleRequest searchRequest){
+    public List<HighlightedArticle> searchArticles(ArticleRequest searchRequest){
 
         Client client = null;
         client = ElasticsearchPoolUtil.getInstance().getClient();
-        LinkedList<Article> articles = new LinkedList<>();
+        LinkedList<HighlightedArticle> articles = new LinkedList<>();
         try {
             QueryBuilder qb = QueryBuilders.queryStringQuery(searchRequest.getQuery());
 
             FilterBuilder filter = null;
 
+            FieldSortBuilder sortBuilder = SortBuilders.fieldSort("discoverDate").order(SortOrder.DESC).sortMode("max");
+
+
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
                     .setIndices("newsriver")
                     .setTypes("article")
-                    .setHighlighterPreTags("@newsriver-highlighted-field@")
-                    .setHighlighterPostTags("@/newsriver-highlighted-field@")
+                    .addHighlightedField("title")
+                    .addHighlightedField("text")
+                    .setHighlighterPreTags("<highlighted>")
+                    .setHighlighterPostTags("</highlighted>")
+                    .setHighlighterRequireFieldMatch(false)
+                    .setHighlighterNumOfFragments(1)
                     .setSize(searchRequest.getLimit())
+                    .addSort(sortBuilder)
+                    .addSort(SortBuilders.scoreSort())
                     .setQuery(qb);
 
             if(searchRequest.getId()!=null){
@@ -80,9 +94,29 @@ public class ArticleFactory {
 
             SearchResponse response =  searchRequestBuilder.execute().actionGet();
             for (SearchHit hit : response.getHits()) {
+
+
+
+
                 try {
-                Article article =  mapper.readValue(hit.getSourceAsString(),Article.class);
+                    HighlightedArticle article =  mapper.readValue(hit.getSourceAsString(),HighlightedArticle.class);
                     article.setId(hit.getId());
+                    article.setScore(hit.getScore());
+
+                    for(HighlightField filed: hit.getHighlightFields().values()){
+
+                        if(filed.getFragments() == null || filed.getFragments().length<1) continue;
+
+                        Text fragmentText = filed.getFragments()[0];
+
+
+                        if(filed.getName().equalsIgnoreCase("title")){
+                            article.setHighlight(fragmentText.toString());
+                        }else if(article.getHighlight() == null){
+                            article.setHighlight(fragmentText.toString());
+                        }
+                    }
+
                     articles.add(article);
                 } catch (IOException e) {
                     logger.fatal("Unable to deserialize articles", e);

@@ -1,5 +1,6 @@
 package ch.newsriver.data.url;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -16,7 +17,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value=LinkURL.class, name="LinkURL")
 })
 
-
+//Has been added due to the ULR property that was wrongly spelled.
+@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class BaseURL {
 
     private String referralURL;
