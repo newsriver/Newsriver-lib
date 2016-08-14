@@ -63,7 +63,7 @@ public class TokenFactory {
     public String generateTokenAPI(long userId){
 
         TokenBase token = new TokenAPI();
-        token.setTokenId(userId);
+        token.setUserId(userId);
 
         String sql = "INSERT INTO token (userId,type) VALUES (?,'TokenAPI')";
 

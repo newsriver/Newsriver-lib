@@ -25,10 +25,17 @@ public class JDBCPoolUtil {
             public String toString() {
                 return "/sourceDatabase.properties";
             }
+        },
+        NewscronArchive {
+            @Override
+            public String toString() {
+                return "/newscronArchiveDatabase.properties";
+            }
         };
     }
 
     private static DataSource dsSources = null;
+    private static DataSource dsNArchive = null;
 
     private static JDBCPoolUtil instance = null;
 
@@ -48,6 +55,9 @@ public class JDBCPoolUtil {
         if (dsSources != null) {
             ((HikariDataSource) dsSources).close();
         }
+        if (dsNArchive != null) {
+            ((HikariDataSource) dsNArchive).close();
+        }
 
 
     }
@@ -62,6 +72,9 @@ public class JDBCPoolUtil {
             case Sources:
                 ds = dsSources;
                 break;
+            case NewscronArchive:
+                ds = dsNArchive;
+                break;
         }
 
         if (ds == null) {
@@ -71,6 +84,9 @@ public class JDBCPoolUtil {
 
                     case Sources:
                         dsSources = ds;
+                        break;
+                    case NewscronArchive:
+                        dsNArchive = ds;
                         break;
                 }
         }
