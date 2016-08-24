@@ -1,52 +1,56 @@
 package ch.newsriver.data.website;
 
-import ch.newsriver.data.content.Article;
+import ch.newsriver.data.website.source.BaseSource;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by eliapalme on 03/04/16.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WebSite {
 
-    String  name;
-    @JsonView(Article.ArticleViews.PublicView.class)
-    String  hostName;
-    @JsonView(Article.ArticleViews.PublicView.class)
-    String  domainName;
-    @JsonView(Article.ArticleViews.Internal.class)
-    boolean ssl;
-    @JsonView(Article.ArticleViews.Internal.class)
-    int     port;
-    @JsonView(Article.ArticleViews.APIView.class)
-    String  countryName;
-    @JsonView(Article.ArticleViews.APIView.class)
-    String  countryCode;
-    @JsonView(Article.ArticleViews.APIView.class)
-    Set<String> languages = new HashSet<>();
-    @JsonView(Article.ArticleViews.PublicView.class)
-    Long    rankingGlobal;
-    @JsonView(Article.ArticleViews.APIView.class)
-    Long    rankingCountry;
-    @JsonView(Article.ArticleViews.Internal.class)
-    List<String> feeds = new LinkedList<>();
-    @JsonView(Article.ArticleViews.PublicView.class)
-    String  description;
-    @JsonView(Article.ArticleViews.PublicView.class)
-    String  iconURL;
-    @JsonView(Article.ArticleViews.Internal.class)
-    String  lastUpdate;
-    @JsonView(Article.ArticleViews.PublicView.class)
-    String  canonicalURL;
-    @JsonView(Article.ArticleViews.APIView.class)
+    @JsonView(JSONViews.Public.class)
+    String name;
+    @JsonView(JSONViews.Public.class)
+    String hostName;
+    @JsonView(JSONViews.Public.class)
+    String domainName;
+    @JsonView(JSONViews.Public.class)
+    String iconURL;
+    @JsonView(JSONViews.Public.class)
+    Long rankingGlobal;
+    @JsonView(JSONViews.ArticleNested.class)
+    String countryName;
+    @JsonView(JSONViews.ArticleNested.class)
+    String countryCode;
+    @JsonView(JSONViews.API.class)
+    String canonicalURL;
+    @JsonView(JSONViews.API.class)
+    Long rankingCountry;
+    @JsonView(JSONViews.Internal.class)
+    String lastUpdate;
+    @JsonView(JSONViews.Internal.class)
+    String description;
+    @JsonView(JSONViews.Internal.class)
     List<String> alternativeURLs = new LinkedList<>();
-    @JsonView(Article.ArticleViews.APIView.class)
+    @JsonView(JSONViews.Internal.class)
     List<Double> geoLocation;
-
-    @JsonView(Article.ArticleViews.Internal.class)
-    boolean ajaxBased=false;
+    @JsonView(JSONViews.Internal.class)
+    boolean ssl;
+    @JsonView(JSONViews.Internal.class)
+    int port;
+    @JsonView(JSONViews.Internal.class)
+    Set<String> languages = new HashSet<>();
+    @JsonView(JSONViews.Internal.class)
+    boolean ajaxBased = false;
+    @JsonView(JSONViews.Internal.class)
+    List<BaseSource> sources = new LinkedList<>();
 
 
     public String getName() {
@@ -97,14 +101,6 @@ public class WebSite {
         this.rankingCountry = rankingCountry;
     }
 
-    public List<String> getFeeds() {
-        return feeds;
-    }
-
-    public void setFeeds(List<String> feeds) {
-        this.feeds = feeds;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -153,7 +149,6 @@ public class WebSite {
         this.alternativeURLs = alternativeURLs;
     }
 
-
     public Set<String> getLanguages() {
         return languages;
     }
@@ -177,9 +172,11 @@ public class WebSite {
     public void setCountryCode(String countryCode) {
         this.countryCode = countryCode;
     }
+
     public List<Double> getGeoLocation() {
         return geoLocation;
     }
+
     public void setGeoLocation(List<Double> geoLocation) {
         this.geoLocation = geoLocation;
     }
@@ -190,5 +187,29 @@ public class WebSite {
 
     public void setAjaxBased(boolean ajaxBased) {
         this.ajaxBased = ajaxBased;
+    }
+
+    public List<BaseSource> getSources() {
+        return sources;
+    }
+
+    public void setSources(List<BaseSource> sources) {
+        this.sources = sources;
+    }
+
+    public static class JSONViews {
+
+        public static interface Public {
+        }
+
+        public static interface ArticleNested extends Public {
+        }
+
+        public static interface API extends Public {
+        }
+
+        public static interface Internal extends API {
+        }
+
     }
 }

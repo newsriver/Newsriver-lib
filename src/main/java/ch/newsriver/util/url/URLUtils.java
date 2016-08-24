@@ -1,22 +1,26 @@
-package ch.newsriver.util.normalization.url;
+package ch.newsriver.util.url;
 
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.Consts;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.util.PublicSuffixList;
+import org.apache.http.conn.util.PublicSuffixListParser;
+import org.apache.http.conn.util.PublicSuffixMatcher;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
-
-import java.net.*;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 
 
@@ -25,28 +29,56 @@ import java.util.List;
  */
 public class URLUtils {
 
-    private static final Logger logger = LogManager.getLogger(URLUtils.class);
-
-    static final HashSet<String> FILTER_QUERY_PARAMS = new HashSet(Arrays.asList("utm_campaign", "utm_medium", "utm_source","mod","from","ref","utm_cid","utm_content","utm_hp_ref","ncid","feedName","feedType","track","source","localLinksEnabled","cmp","ir","rss","cmpid","m","rssfeed","wprss"));
+    static final HashSet<String> FILTER_QUERY_PARAMS = new HashSet(Arrays.asList("utm_campaign", "utm_medium", "utm_source", "mod", "from", "ref", "utm_cid", "utm_content", "utm_hp_ref", "ncid", "feedName", "feedType", "track", "source", "localLinksEnabled", "cmp", "ir", "rss", "cmpid", "m", "rssfeed", "wprss"));
     static final String GOOGLE_BOT_FRIEND_PARAM = "_escaped_fragment_";
     static final String GOOGLE_BOT_FRIEND_REF = "!";
+    private static final Logger logger = LogManager.getLogger(URLUtils.class);
 
     /*
      * !!! DON'T NORMALIZE THE SAME URL MORE THAN ONE TIME !!!
      */
+    private final static String[] searchList = {"\t", "\u0081", "\u0085", "\u009D", "\u0080", "\u009C"};
+    private final static String[] replacementList = {"", "", "", "", "", "",};
+
+
+    static PublicSuffixList suffixList;
+    static PublicSuffixMatcher matcher;
+
+    static {
+
+        String listname = "suffixlist.txt";
+        try (InputStream inputStream = URLUtils.class.getClassLoader().getResourceAsStream(listname)) {
+
+            //suffix list is optained from https://publicsuffix.org
+            if (inputStream != null) {
+                suffixList = new PublicSuffixListParser().parse(new InputStreamReader(inputStream, Consts.UTF_8));
+            }
+        } catch (Exception e) {
+            logger.fatal("Unable to load public suffix List", e);
+        }
+
+        matcher = new PublicSuffixMatcher(suffixList.getRules(), suffixList.getExceptions());
+
+    }
 
     public static String normalizeUrl(String dirtyUrlString, boolean encodeQuery) throws MalformedURLException {
         return normalizeUrl(dirtyUrlString, "", encodeQuery);
     }
+
     public static String normalizeUrl(String dirtyUrlString) throws MalformedURLException {
         return normalizeUrl(dirtyUrlString, true);
     }
 
-    public static String normalizeUrl(String dirtyUrlString, String baseURLString) throws MalformedURLException  {
+    public static String normalizeUrl(String dirtyUrlString, String baseURLString) throws MalformedURLException {
         return normalizeUrl(dirtyUrlString, baseURLString, true);
     }
 
-    public static String normalizeUrl(String dirtyUrlString, String baseURLString, boolean encodeQuery) throws MalformedURLException  {
+    /* In case of problem!
+    private final static String[] searchList =      {"\t", "|" ,   " ",  "\u00A0", "[",   "]",   "\u0093", "\u009F", "\u0094", "\"",  "\u2009",    "\u00E2", "\u0060", "\u0081", "\u0085", "\u009D", "\u0080", "\u009C", "\u00C3", "\u00A9", "\u0092"};
+    private final static String[] replacementList = {"",   "%7C", "%20", "%C2%A0", "%5B", "%5D", "%C2%93", "%C2%9F", "%C2%94", "%22", "%E2%80%89", "%E2"    ,"%60",    "",       "",       "",        ""   ,    "",      "%C3",    "%A9",    "%92"};
+    */
+
+    public static String normalizeUrl(String dirtyUrlString, String baseURLString, boolean encodeQuery) throws MalformedURLException {
 
 
         //In case the URL is protocol relative add http as default
@@ -81,11 +113,13 @@ public class URLUtils {
         // God bless you if somebody changes the order of the following functions
         try {
             absoluteURL = cleanServiceParameters(absoluteURL);
-        } catch (URISyntaxException ex) { }
+        } catch (URISyntaxException ex) {
+        }
 
         try {
             absoluteURL = makeGooglebotFriendly(absoluteURL);
-        } catch (URISyntaxException ex) { }
+        } catch (URISyntaxException ex) {
+        }
 
 
         URL normalizedURL = URLNormalizerImpl.getNormalizedURL(absoluteURL);
@@ -97,14 +131,6 @@ public class URLUtils {
 
         return StringUtils.strip(absoluteURL.toString(), "#");
     }
-
-    /* In case of problem!
-    private final static String[] searchList =      {"\t", "|" ,   " ",  "\u00A0", "[",   "]",   "\u0093", "\u009F", "\u0094", "\"",  "\u2009",    "\u00E2", "\u0060", "\u0081", "\u0085", "\u009D", "\u0080", "\u009C", "\u00C3", "\u00A9", "\u0092"};
-    private final static String[] replacementList = {"",   "%7C", "%20", "%C2%A0", "%5B", "%5D", "%C2%93", "%C2%9F", "%C2%94", "%22", "%E2%80%89", "%E2"    ,"%60",    "",       "",       "",        ""   ,    "",      "%C3",    "%A9",    "%92"};
-    */
-
-    private final static String[] searchList =      {"\t", "\u0081", "\u0085", "\u009D", "\u0080", "\u009C"};
-    private final static String[] replacementList = {"",   "",       "",       "",       ""   ,    "",};
 
     private static String tryToFixUrlString(String urlString, boolean encodeQuery) {
         if (urlString == null) {
@@ -119,8 +145,9 @@ public class URLUtils {
                 String[] parts = urlString.split("#");
                 parts[0] = URIUtil.encodeQuery(parts[0]);
 
-                return StringUtils.join(parts,"#");
-            } catch (URIException ex) { }
+                return StringUtils.join(parts, "#");
+            } catch (URIException ex) {
+            }
         }
 
         return urlString;
@@ -146,8 +173,8 @@ public class URLUtils {
     private static URL makeValidURL(final String url) throws MalformedURLException {
         try {
             return new URL(url.trim());
+        } catch (final MalformedURLException e) {
         }
-        catch (final MalformedURLException e){ }
 
         // Add by default http protocol
         return new URL("http://" + url.trim());
@@ -164,7 +191,8 @@ public class URLUtils {
         //in case the feed link is not valid we don't care as the vaseUrl can also be null
         try {
             baseUrl = new URL(baseUrlString);
-        } catch (MalformedURLException ex) {}
+        } catch (MalformedURLException ex) {
+        }
 
         try {
 
@@ -189,17 +217,21 @@ public class URLUtils {
         List<NameValuePair> params = uriBuilder.getQueryParams();
         uriBuilder.removeQuery();
 
-        for(NameValuePair param : params){
-            if(FILTER_QUERY_PARAMS.contains(param.getName())) {
+        for (NameValuePair param : params) {
+            if (FILTER_QUERY_PARAMS.contains(param.getName())) {
                 continue;
             }
             //remove all empty params
-            if(param.getValue() == null || param.getValue().isEmpty()){
+            if (param.getValue() == null || param.getValue().isEmpty()) {
                 continue;
             }
             uriBuilder.addParameter(param.getName(), param.getValue());
         }
         return uriBuilder.build().toURL();
+    }
+
+    public static String getDomainRoot(String url) {
+        return matcher.getDomainRoot(url);
     }
 }
 

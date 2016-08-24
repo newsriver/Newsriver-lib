@@ -3,8 +3,7 @@ package ch.newsriver.util;
 import ch.newsriver.data.html.AjaxHTML;
 import ch.newsriver.data.html.HTML;
 import ch.newsriver.util.http.HttpClientPool;
-import ch.newsriver.util.normalization.text.InterruptibleCharSequence;
-import com.google.common.base.Function;
+import ch.newsriver.util.text.InterruptibleCharSequence;
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
 import org.apache.commons.lang3.StringUtils;
@@ -20,14 +19,11 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -46,8 +42,6 @@ public class HTMLUtils {
     private static final Pattern encoding_detector = Pattern.compile(".*encoding=\"([^\"]*)\".*");
     private static final Pattern meta_encoding_detector = Pattern.compile(".*charset=\"?([^\"'; ]+).*");
     private static final Pattern http_encoding_detector = Pattern.compile(".*charset=\"?([^\\\"'; ]+).*");
-
-
 
 
     public static HTML getHTML(String url, boolean simulateMobile) throws IOException {
@@ -83,7 +77,6 @@ public class HTMLUtils {
             String htmlSrc;
 
 
-
             if (entity.getContentEncoding() != null) {
 
                 htmlSrc = EntityUtils.toString(entity);
@@ -101,41 +94,40 @@ public class HTMLUtils {
 
                 String[] metas = StringUtils.substringsBetween(htmlSrc, "<meta", ">");
                 Queue<String> metaQueue = null;
-                if(metas != null){
-                    metaQueue =  new LinkedList<>(Arrays.asList(metas));
+                if (metas != null) {
+                    metaQueue = new LinkedList<>(Arrays.asList(metas));
                 }
 
 
-
-                while(metaQueue!=null && !metaQueue.isEmpty()){
+                while (metaQueue != null && !metaQueue.isEmpty()) {
                     Matcher meta_ecoding_found = meta_encoding_detector.matcher(new InterruptibleCharSequence(metaQueue.poll()));
                     if (meta_ecoding_found.find() && meta_ecoding_found.group(1) != null) {
                         htmlSrc = new String(rawHTML, meta_ecoding_found.group(1).toLowerCase());
                         metaQueue.clear();
-                        econdingFound=true;
+                        econdingFound = true;
                     }
                 }
 
 
                 Queue<String> xmlsQueue = null;
-                if(!econdingFound){
+                if (!econdingFound) {
                     String[] xmls = StringUtils.substringsBetween(htmlSrc, "<?xml", ">");
-                    if(xmls != null){
-                        xmlsQueue =  new  LinkedList<>(Arrays.asList(xmls));
+                    if (xmls != null) {
+                        xmlsQueue = new LinkedList<>(Arrays.asList(xmls));
                     }
                 }
 
 
-                while(xmlsQueue!=null && !xmlsQueue.isEmpty()){
+                while (xmlsQueue != null && !xmlsQueue.isEmpty()) {
                     Matcher html_ecoding_found = encoding_detector.matcher(new InterruptibleCharSequence(xmlsQueue.poll()));
                     if (html_ecoding_found.find() && html_ecoding_found.group(1) != null) {
                         htmlSrc = new String(rawHTML, html_ecoding_found.group(1).toLowerCase());
                         xmlsQueue.clear();
-                        econdingFound=true;
+                        econdingFound = true;
                     }
                 }
 
-                if(!econdingFound){
+                if (!econdingFound) {
                     CharsetDetector detector = new CharsetDetector();
                     detector.setText(htmlSrc.getBytes());
                     CharsetMatch match = detector.detect();
@@ -145,7 +137,7 @@ public class HTMLUtils {
             }
             EntityUtils.consumeQuietly(entity);
 
-            if(htmlSrc!=null){
+            if (htmlSrc != null) {
                 html = new HTML();
                 html.setRawHTML(htmlSrc);
             }
@@ -172,7 +164,7 @@ public class HTMLUtils {
             driver.quit();
         }*/
         Set<String> urls = new HashSet<>();
-        String htlmSrc=null;
+        String htlmSrc = null;
         WebDriver driver = new RemoteWebDriver(new URL("http://46.4.71.105:31555"), DesiredCapabilities.phantomjs());
         try {
 
@@ -191,13 +183,13 @@ public class HTMLUtils {
                 urls.add(driver.getCurrentUrl());
                 driver.navigate().back();
             }
-        }catch (Exception e){
-            logger.error("Error scanning ajax website",e);
+        } catch (Exception e) {
+            logger.error("Error scanning ajax website", e);
         } finally {
             driver.quit();
         }
 
-        if(htlmSrc!=null){
+        if (htlmSrc != null) {
             html = new AjaxHTML();
             html.setRawHTML(htlmSrc);
             html.setDynamicURLs(urls);
@@ -206,7 +198,6 @@ public class HTMLUtils {
 
         return html;
     }
-
 
 
 }

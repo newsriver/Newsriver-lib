@@ -24,18 +24,18 @@ public class ElasticsearchPoolUtil {
     private static final Logger logger = LogManager.getLogger(ElasticsearchPoolUtil.class);
     private static ElasticsearchPoolUtil instance = null;
     private static Client client = null;
+    private static String clusterName = "";
     private boolean connected;
-    private static String clusterName="";
 
-    private ElasticsearchPoolUtil(){
+    private ElasticsearchPoolUtil() {
 
-        connected=false;
+        connected = false;
     }
 
 
     public static synchronized ElasticsearchPoolUtil getInstance() {
 
-        if(instance==null){
+        if (instance == null) {
             instance = new ElasticsearchPoolUtil();
             instance.connect();
         }
@@ -45,7 +45,7 @@ public class ElasticsearchPoolUtil {
 
     public static boolean hasBeenInstanced() {
 
-        return instance!=null;
+        return instance != null;
     }
 
 
@@ -53,7 +53,7 @@ public class ElasticsearchPoolUtil {
 
 
         //check if pool is not already been connected
-        if(client !=null){
+        if (client != null) {
             return;
         }
 
@@ -66,7 +66,7 @@ public class ElasticsearchPoolUtil {
             clusterName = elasitcserachConfig.getProperty("cluster.name");
             Settings settings = Settings.settingsBuilder().put("cluster.name", clusterName)
                     .put("client.transport.sniff", false)
-                    .put("client.transport.ping_timeout","5s")
+                    .put("client.transport.ping_timeout", "5s")
 
                     //Due to a bug in the Elastic search client we have to manualy limit the threadpool size and set the processors
                     //http://elasticsearch-users.115913.n3.nabble.com/TransportClient-behavior-when-the-server-node-is-not-availble-td4045466.html
@@ -89,15 +89,13 @@ public class ElasticsearchPoolUtil {
                     .build();
 
 
-
-
             client = TransportClient.builder().settings(settings).build()
                     .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.1")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
-            if(elasitcserachConfig.getProperty("cluster.address.2")!=null) {
-                ((TransportClient)client).addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.2")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
+            if (elasitcserachConfig.getProperty("cluster.address.2") != null) {
+                ((TransportClient) client).addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.2")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
             }
-            if(elasitcserachConfig.getProperty("cluster.address.3")!=null) {
-                ((TransportClient)client).addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.3")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
+            if (elasitcserachConfig.getProperty("cluster.address.3") != null) {
+                ((TransportClient) client).addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.3")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
             }
 
 
@@ -118,33 +116,31 @@ public class ElasticsearchPoolUtil {
     }
 
 
-
     public void release() {
         connected = false;
-        if(client !=null){
+        if (client != null) {
             client.close();
         }
         instance = null;
     }
 
 
-
-    public Client getClient(){
-        if(!connected){
+    public Client getClient() {
+        if (!connected) {
             logger.fatal("ElasticsearchConnectionFactory need to be connected before asking client!");
         }
-        if(client == null){
+        if (client == null) {
             logger.fatal("ElasticsearchConnectionFactory client is null!");
         }
         return client;
     }
 
 
-    public boolean checkHealth(){
+    public ClusterHealthStatus checkHealth() {
 
-        final ClusterHealthRequest clusterHealthRequest=new ClusterHealthRequest(clusterName).timeout(TimeValue.timeValueSeconds(60)).waitForYellowStatus();
-        ClusterHealthResponse clusterHealth= getClient().admin().cluster().health(clusterHealthRequest).actionGet();
-        return clusterHealth.getStatus() == ClusterHealthStatus.GREEN;
+        final ClusterHealthRequest clusterHealthRequest = new ClusterHealthRequest(clusterName).timeout(TimeValue.timeValueSeconds(60)).waitForYellowStatus();
+        ClusterHealthResponse clusterHealth = getClient().admin().cluster().health(clusterHealthRequest).actionGet();
+        return clusterHealth.getStatus();
     }
 
 

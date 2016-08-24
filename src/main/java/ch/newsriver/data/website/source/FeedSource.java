@@ -1,4 +1,4 @@
-package ch.newsriver.data.source;
+package ch.newsriver.data.website.source;
 
 /**
  * Created by eliapalme on 19/04/16.

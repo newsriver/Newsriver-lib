@@ -1,6 +1,5 @@
-package ch.newsriver.util.normalization.text;
+package ch.newsriver.util.text;
 
-import ch.newsriver.util.normalization.text.InterruptibleCharSequence;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.text.WordUtils;
 
@@ -13,13 +12,13 @@ public class TextNormaliser {
 
     //do not use \\w as it doese not contain letter with accents instead we are using \p{L}
     //\uD83C-\uDBFF\uDC00-\uDFFF This is for emoji
-    private static final Pattern onlyLetters =  Pattern.compile("[^\\p{L}]");
+    private static final Pattern onlyLetters = Pattern.compile("[^\\p{L}]");
 
-    private static final Pattern multiPoints =  Pattern.compile("\\.+");
-    private static final Pattern multiSpaces =  Pattern.compile("\\s+");
-    private static final Pattern noTags =  Pattern.compile("(<([^>]+)>)");
+    private static final Pattern multiPoints = Pattern.compile("\\.+");
+    private static final Pattern multiSpaces = Pattern.compile("\\s+");
+    private static final Pattern noTags = Pattern.compile("(<([^>]+)>)");
     //\uD83C-\uDBFF\uDC00-\uDFFF This is for emoji
-    private static final Pattern onlyLettersAndSymbols =  Pattern.compile("[^\\p{L}\\p{N}\\p{M}\\p{P}\\p{S}\\uD83C-\\uDBFF\\uDC00-\\uDFFF]");
+    private static final Pattern onlyLettersAndSymbols = Pattern.compile("[^\\p{L}\\p{N}\\p{M}\\p{P}\\p{S}\\uD83C-\\uDBFF\\uDC00-\\uDFFF]");
 
     public static String cleanText(String text) {
 
@@ -51,9 +50,9 @@ public class TextNormaliser {
             }
         }
 
-        if(upperCount > text.length()/2){
+        if (upperCount > text.length() / 2) {
             text = text.toLowerCase();
-            text= WordUtils.capitalize(text, '.');
+            text = WordUtils.capitalize(text, '.');
         }
 
 

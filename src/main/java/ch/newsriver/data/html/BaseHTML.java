@@ -1,6 +1,5 @@
 package ch.newsriver.data.html;
 
-import ch.newsriver.data.source.URLSeedSource;
 import ch.newsriver.data.url.BaseURL;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -10,22 +9,21 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  */
 
 
-
-@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include= JsonTypeInfo.As.PROPERTY, property="type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value=AjaxHTML.class, name="ajaxHTML"),
-        @JsonSubTypes.Type(value=HTML.class, name="HTML"),
+        @JsonSubTypes.Type(value = AjaxHTML.class, name = "ajaxHTML"),
+        @JsonSubTypes.Type(value = HTML.class, name = "HTML"),
 })
 
 
 public class BaseHTML {
 
     BaseURL referral;
-    String  rawHTML;
-    String  title;
-    String  encoding;
-    String  language;
-    String  url;
+    String rawHTML;
+    String title;
+    String encoding;
+    String language;
+    String url;
     boolean alreadyFetched = false;
 
     public String getRawHTML() {
