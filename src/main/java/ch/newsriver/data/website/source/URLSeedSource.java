@@ -1,11 +1,9 @@
-package ch.newsriver.data.source;
-
-import java.util.Map;
+package ch.newsriver.data.website.source;
 
 /**
  * Created by eliapalme on 27/05/16.
  */
-public class URLSeedSource extends  BaseSource{
+public class URLSeedSource extends BaseSource {
 
     //Is this a root seed URL or temporary used to traverse the website.
     private boolean permanent;

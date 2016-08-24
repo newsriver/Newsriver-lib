@@ -1,15 +1,11 @@
-package ch.newsriver.data.source;
+package ch.newsriver.data.website.source;
 
 import ch.newsriver.dao.ElasticsearchPoolUtil;
 import ch.newsriver.dao.RedisPoolUtil;
-import ch.newsriver.data.content.Article;
-import ch.newsriver.data.publisher.Publisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.exec.ExecuteException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.queryparser.xml.FilterBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -21,10 +17,8 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.index.engine.DocumentAlreadyExistsException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Transaction;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -48,8 +42,14 @@ public class SourceFactory {
     private final static Long GRACETIME_MILLISECONDS = ((long) GRACETIME_SECONDS) * 1000l;
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final Logger logger = LogManager.getLogger(SourceFactory.class);
-    private static SourceFactory instance;
     private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    private static SourceFactory instance;
+    private static String visitedScript = "local current\n" +
+            "current = redis.call(\"incr\",KEYS[1])\n" +
+            "if tonumber(current) == 1 then\n" +
+            "    redis.call(\"expire\",KEYS[1]," + GRACETIME_SECONDS + ")\n" +
+            "end\n" +
+            "return current";
 
     private SourceFactory() {
 
@@ -62,7 +62,6 @@ public class SourceFactory {
         }
         return instance;
     }
-
 
     public long updateLastVisit(String id) {
 
@@ -143,7 +142,6 @@ public class SourceFactory {
         return sources;
     }
 
-
     public boolean setSource(BaseSource source, boolean updateIfExists) {
 
         Client client = null;
@@ -221,20 +219,12 @@ public class SourceFactory {
 
     }
 
-
     private String getKey(String id) {
         StringBuilder builder = new StringBuilder();
         return builder.append(REDIS_KEY_PREFIX).append(":")
                 .append(REDIS_KEY_VERSION).append(":")
                 .append(id).toString();
     }
-
-    private static String visitedScript = "local current\n" +
-            "current = redis.call(\"incr\",KEYS[1])\n" +
-            "if tonumber(current) == 1 then\n" +
-            "    redis.call(\"expire\",KEYS[1]," + GRACETIME_SECONDS + ")\n" +
-            "end\n" +
-            "return current";
 
     public boolean setVisited(String id) {
         boolean newVisit;

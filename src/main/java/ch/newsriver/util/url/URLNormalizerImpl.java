@@ -1,4 +1,4 @@
-package ch.newsriver.util.normalization.url;
+package ch.newsriver.util.url;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -12,10 +12,8 @@ import java.util.LinkedList;
 
 /**
  * URL normalizer
- *
+ * <p>
  * http://en.wikipedia.org/wiki/URL_normalization
- *
- *
  */
 public class URLNormalizerImpl {
 
@@ -52,7 +50,7 @@ public class URLNormalizerImpl {
              */
             path = path.trim();
 
-            final LinkedList<Pair<String,String>> params = createParameterMap(canonicalURL.getQuery());
+            final LinkedList<Pair<String, String>> params = createParameterMap(canonicalURL.getQuery());
             final String queryString;
 
             if (params != null && params.size() > 0) {
@@ -104,13 +102,12 @@ public class URLNormalizerImpl {
      *
      * @return Null if there is no query string.
      */
-    private static LinkedList<Pair<String,String>> createParameterMap(final String queryString) {
+    private static LinkedList<Pair<String, String>> createParameterMap(final String queryString) {
         if (queryString == null || queryString.isEmpty()) {
             return null;
         }
 
-        final LinkedList<Pair<String,String>> params = new LinkedList();
-
+        final LinkedList<Pair<String, String>> params = new LinkedList();
 
 
         final String[] pairs = queryString.split("&");
@@ -142,16 +139,16 @@ public class URLNormalizerImpl {
      * Canonicalize the query string.
      *
      * @param params Parameter name-value pairs in lexicographical
-     * order.
+     *               order.
      * @return Canonical form of query string.
      */
-    private static String canonicalize(final LinkedList<Pair<String,String>> params) {
+    private static String canonicalize(final LinkedList<Pair<String, String>> params) {
         if (params == null || params.isEmpty()) {
             return "";
         }
 
         final StringBuffer sb = new StringBuffer(100);
-        for (Pair<String,String> pair : params) {
+        for (Pair<String, String> pair : params) {
             if (sb.length() > 0) {
                 sb.append('&');
             }

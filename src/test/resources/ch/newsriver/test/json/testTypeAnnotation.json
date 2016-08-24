@@ -1,0 +1,15 @@
+{
+  "id" : "13",
+  "elements" : [ ],
+  "referrals" : [ ],
+  "metadata" : {
+    "finSentiment" : {
+      "type" : "finSentiment",
+      "sentiment" : 1.0
+    },
+    "readTime" : {
+      "type" : "readTime",
+      "seconds" : 60
+    }
+  }
+}

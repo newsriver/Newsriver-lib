@@ -3,7 +3,9 @@ package ch.newsriver.data.content;
 import ch.newsriver.data.metadata.MetaData;
 import ch.newsriver.data.url.BaseURL;
 import ch.newsriver.data.website.WebSite;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -13,40 +15,33 @@ import java.util.List;
  * Created by eliapalme on 18/03/16.
  */
 
-
-
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Article {
 
-    static public class  ArticleViews {
-        static public class PublicView { }
-        static public class APIView extends PublicView { }
-        static public class Internal extends APIView { }
-    }
-
-    @JsonView(ArticleViews.APIView.class)
-    String          id;
-    @JsonView(ArticleViews.APIView.class)
-    String          publishDate;
-    @JsonView(ArticleViews.PublicView.class)
-    String          discoverDate;
-    @JsonView(ArticleViews.PublicView.class)
-    String          title;
-    @JsonView(ArticleViews.PublicView.class)
-    String          language;
-    @JsonView(ArticleViews.PublicView.class)
-    String          text;
-    @JsonView(ArticleViews.PublicView.class)
-    String          url;
-    @JsonView(ArticleViews.PublicView.class)
-    List<Element>   elements = new LinkedList<>();
-    @JsonView(ArticleViews.PublicView.class)
-    WebSite         website;
-    @JsonView(ArticleViews.Internal.class)
-    List<BaseURL>   referrals = new LinkedList<>();
-    @JsonView(ArticleViews.PublicView.class)
-    HashMap<String,MetaData> metadata = new HashMap<>();
-
+    @JsonView(JSONViews.API.class)
+    String id;
+    @JsonView(JSONViews.API.class)
+    String publishDate;
+    @JsonView(JSONViews.Public.class)
+    String discoverDate;
+    @JsonView(JSONViews.Public.class)
+    String title;
+    @JsonView(JSONViews.Public.class)
+    String language;
+    @JsonView(JSONViews.Public.class)
+    String text;
+    @JsonView(JSONViews.Public.class)
+    String url;
+    @JsonView(JSONViews.Public.class)
+    @JsonDeserialize(as = LinkedList.class)
+    List<Element> elements = new LinkedList<>();
+    @JsonView(JSONViews.Public.class)
+    WebSite website;
+    @JsonView(JSONViews.Internal.class)
+    @JsonDeserialize(as = LinkedList.class)
+    List<BaseURL> referrals = new LinkedList<>();
+    @JsonView(JSONViews.Public.class)
+    HashMap<String, MetaData> metadata = new HashMap<>();
 
     public String getPublishDate() {
         return publishDate;
@@ -104,27 +99,53 @@ public class Article {
         this.elements = elements;
     }
 
-    public String getId() {return id;}
+    public String getId() {
+        return id;
+    }
 
-    public void setId(String id) {this.id = id;}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    public List<BaseURL> getReferrals() {return referrals;}
+    public List<BaseURL> getReferrals() {
+        return referrals;
+    }
 
-    public void setReferrals(List<BaseURL> referrals) {this.referrals = referrals;}
+    public void setReferrals(List<BaseURL> referrals) {
+        this.referrals = referrals;
+    }
 
-    public WebSite getWebsite() {return website;}
+    public WebSite getWebsite() {
+        return website;
+    }
 
-    public void setWebsite(WebSite website) {this.website = website;}
+    public void setWebsite(WebSite website) {
+        this.website = website;
+    }
 
     public HashMap<String, MetaData> getMetadata() {
         return metadata;
     }
+
     public void setMetadata(HashMap<String, MetaData> metadata) {
         this.metadata = metadata;
     }
+
     public void addMetadata(MetaData metadata) {
-        this.metadata.put(metadata.key(),metadata);
+        this.metadata.put(metadata.key(), metadata);
     }
+
+    static public class JSONViews {
+        static public interface Public {
+        }
+
+        static public interface API extends Public {
+        }
+
+        static public interface Internal extends API {
+        }
+    }
+
 }
 
 

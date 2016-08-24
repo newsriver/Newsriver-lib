@@ -1,9 +1,9 @@
-package ch.newsriver.util.normalization.text;
+package ch.newsriver.util.text;
 
 /**
  * Created by eliapalme on 11/03/16.
  */
-public class InterruptibleCharSequence implements CharSequence{
+public class InterruptibleCharSequence implements CharSequence {
 
     CharSequence inner;
 
