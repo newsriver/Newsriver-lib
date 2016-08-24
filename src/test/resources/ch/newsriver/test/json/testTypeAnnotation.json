@@ -4,14 +4,12 @@
   "referrals" : [ ],
   "metadata" : {
     "finSentiment" : {
-      "finSentiment" : {
-        "sentiment" : 1.0
-      }
+      "type" : "finSentiment",
+      "sentiment" : 1.0
     },
     "readTime" : {
-      "readTime" : {
-        "seconds" : 60
-      }
+      "type" : "readTime",
+      "seconds" : 60
     }
   }
 }
