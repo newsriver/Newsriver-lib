@@ -20,7 +20,8 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = ReadTime.class, name = "readTime"),
-        @JsonSubTypes.Type(value = FinancialSentiment.class, name = "finSentiment")
+        @JsonSubTypes.Type(value = FinancialSentiment.class, name = "finSentiment"),
+        @JsonSubTypes.Type(value = Category.class, name = "category")
 
 })
 public abstract class MetaData {
