@@ -152,7 +152,7 @@ public class HTMLUtils {
 
     }
 
-    public static AjaxHTML getAjaxBasedHTML(String url) throws IOException {
+    public static AjaxHTML getAjaxBasedHTML(String url, boolean extractDynamicLinks) throws IOException {
         AjaxHTML html = null;
         /*ChromeDriver driver = new ChromeDriver();
         try {
@@ -173,15 +173,25 @@ public class HTMLUtils {
             wait.until(_driver -> String.valueOf(((JavascriptExecutor) _driver).executeScript("return document.readyState")).equals("complete"));
             htlmSrc = driver.getPageSource();
 
-            List<WebElement> elementList = driver.findElements(By.tagName("div"));
-            for (WebElement element : elementList) {
-                if (!element.isDisplayed() || !element.isEnabled()) {
-                    continue;
+            if (extractDynamicLinks) {
+
+                String mailURL = driver.getCurrentUrl();
+                int divFound = driver.findElements(By.tagName("div")).size();
+
+                for (int pos = 0; pos < divFound; pos++) {
+                    WebElement element = driver.findElements(By.tagName("div")).get(pos);
+                    if (!element.isDisplayed() || !element.isEnabled()) {
+                        continue;
+                    }
+                    element.click();
+
+                    wait.until(_driver -> String.valueOf(((JavascriptExecutor) _driver).executeScript("return document.readyState")).equals("complete"));
+
+                    if (!driver.getCurrentUrl().equals(mailURL)) {
+                        urls.add(driver.getCurrentUrl());
+                        driver.navigate().back();
+                    }
                 }
-                element.click();
-                wait.until(_driver -> String.valueOf(((JavascriptExecutor) _driver).executeScript("return document.readyState")).equals("complete"));
-                urls.add(driver.getCurrentUrl());
-                driver.navigate().back();
             }
         } catch (Exception e) {
             logger.error("Error scanning ajax website", e);

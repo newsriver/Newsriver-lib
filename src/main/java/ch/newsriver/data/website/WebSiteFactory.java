@@ -216,13 +216,19 @@ public class WebSiteFactory {
         }
     }
 
+    //TODO: eventually we could set lastUpdate as the oldest lastVisit among the items
+
     public long updateLastVisit(String hostname, BaseSource source) {
 
         String lastVisit = dateFormatter.format(new Date());
-        //This script iterates trough all sources of the website and updates the lastVisit field of the specific source.
-        //TODO: eventually we could set lastUpdate as the oldest lastVisit among the items
-        Script updateSource = new Script("ctx._source['lastUpdate']='" + lastVisit + "'  \n ctx._source.sources = ctx._source.sources.each({ item -> if (item['url'] == '" + source.getUrl() + "') { item['lastVisit'] = '" + lastVisit + "'}})");
-
+        //This script iterates trough all sources of a website and
+        //updates the lastVisit field of the specific source.
+        Script updateSource = new Script("ctx._source['lastUpdate']='" + lastVisit + "' \n " +
+                "ctx._source.sources = ctx._source.sources.each({ " +
+                "item -> if (item['url'] == '" + source.getUrl() + "') { " +
+                "item['lastVisit'] = '" + lastVisit +
+                "'}" +
+                "})");
 
         Client client;
         client = ElasticsearchPoolUtil.getInstance().getClient();
@@ -244,6 +250,5 @@ public class WebSiteFactory {
             logger.error("Unable to update website source", e);
         }
         return -1;
-
     }
 }
