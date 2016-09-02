@@ -184,7 +184,7 @@ public class HTMLUtils {
                         continue;
                     }
                     element.click();
-
+                    //TODO: instead of waiting for the new url to load would be good to intercept the URL change, block it, save it, and continue the iteration
                     wait.until(_driver -> String.valueOf(((JavascriptExecutor) _driver).executeScript("return document.readyState")).equals("complete"));
 
                     if (!driver.getCurrentUrl().equals(mailURL)) {

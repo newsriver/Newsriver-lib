@@ -3,6 +3,7 @@ package ch.newsriver.data.website;
 import ch.newsriver.dao.ElasticsearchPoolUtil;
 import ch.newsriver.dao.RedisPoolUtil;
 import ch.newsriver.data.website.source.BaseSource;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -135,7 +136,10 @@ public class WebSiteFactory {
         }
     }
 
-    public HashMap<String, BaseSource> nextWebsiteSourceToVisits() {
+
+    //TODO: avoid using this methos as it currently couses ES to go crazy
+    //The issue is due to the setSourceVisited method that run update scripts on ES
+    public HashMap<String, BaseSource> nextWebsiteSourcesToVisits() {
 
         Client client = null;
         client = ElasticsearchPoolUtil.getInstance().getClient();
@@ -200,6 +204,69 @@ public class WebSiteFactory {
         return selectedSources;
     }
 
+
+    //TODO: we should find a better soltution to this method something like: nextWebsiteSourcesToVisits that is not get the next sources to crawl and not
+    //the next website. This bacause getting the next website means making a lot of requests to the same domain.
+    public List<BaseSource> nextWebsiteToVisits() {
+
+        Client client = null;
+        client = ElasticsearchPoolUtil.getInstance().getClient();
+        List<BaseSource> sources = new LinkedList<>();
+        try {
+
+            QueryBuilder qb = QueryBuilders.queryStringQuery("*");
+
+            SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
+                    .setIndices("newsriver-website")
+                    .setTypes("website")
+                    .setSize(SOURCE_TO_FETCH * SOURCE_TO_FETCH_X)
+                    .addSort("lastVisit", SortOrder.ASC)
+                    .addFields("_id", "lastVisit", "sources")
+                    .setQuery(qb)
+                    .setPostFilter(QueryBuilders.rangeQuery("lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS));
+
+
+            SearchResponse response = searchRequestBuilder.execute().actionGet();
+            Map<String, List<BaseSource>> candidate = new HashMap<>();
+            response.getHits().forEach(hit -> {
+
+                List<BaseSource> webStieSources;
+                try {
+                    webStieSources = mapper.readValue((String) hit.getSource().get("sources"), new TypeReference<LinkedList<BaseSource>>() {
+                    });
+                    candidate.put(hit.getId(), webStieSources);
+                } catch (Exception e) {
+                    logger.error("Unable to deserialise source", e);
+                }
+
+            });
+
+            LinkedList<String> websites = new LinkedList<>(candidate.keySet());
+            Collections.shuffle(websites);
+
+            if (!candidate.isEmpty()) {
+                do {
+                    String sourceId = websites.pollFirst();
+
+                    if (!setVisited(sourceId)) {
+                        logger.warn("Conflict found, the source was recently visited id:" + sourceId);
+                        continue;
+                    }
+                    sources.addAll(candidate.get(sourceId));
+                } while (sources.size() < SOURCE_TO_FETCH && !candidate.isEmpty());
+            }
+
+
+        } catch (Exception e) {
+            logger.error("Unable to get articles from elasticsearch", e);
+        } finally {
+        }
+        //shuffle the sources to avoid crawling several sources of a same domain in a row
+        Collections.shuffle(sources);
+        return sources;
+    }
+
+
     private String getKey(String id) {
         StringBuilder builder = new StringBuilder();
         return builder.append(REDIS_KEY_PREFIX).append(":")
@@ -217,21 +284,20 @@ public class WebSiteFactory {
     }
 
     //TODO: eventually we could set lastUpdate as the oldest lastVisit among the items
-
-    public long updateLastVisit(String hostname, BaseSource source) {
+    public long updateSourceLastVisit(String hostname, BaseSource source) {
 
         String lastVisit = dateFormatter.format(new Date());
         //This script iterates trough all sources of a website and
         //updates the lastVisit field of the specific source.
         Script updateSource = new Script("ctx._source['lastUpdate']='" + lastVisit + "' \n " +
-                "ctx._source.sources = ctx._source.sources.each({ " +
-                "item -> if (item['url'] == '" + source.getUrl() + "') { " +
+                "for (item in ctx._source.sources) {" +
+                "if (item['url'] == '" + source.getUrl() + "') { " +
                 "item['lastVisit'] = '" + lastVisit +
                 "'}" +
-                "})");
+                "}");
 
-        Client client;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+
+        Client client = ElasticsearchPoolUtil.getInstance().getClient();
         try {
 
             UpdateRequest updateRequest = new UpdateRequest();
@@ -239,7 +305,7 @@ public class WebSiteFactory {
                     .type("website")
                     .id(hostname)
                     .script(updateSource)
-                    .retryOnConflict(3);
+                    .retryOnConflict(0);
 
 
             return client.update(updateRequest).get().getVersion();
