@@ -19,24 +19,24 @@ import java.util.Properties;
 /**
  * Created by eliapalme on 18/03/16.
  */
-public class ElasticsearchPoolUtil {
+public class ElasticsearchUtil {
 
-    private static final Logger logger = LogManager.getLogger(ElasticsearchPoolUtil.class);
-    private static ElasticsearchPoolUtil instance = null;
+    private static final Logger logger = LogManager.getLogger(ElasticsearchUtil.class);
+    private static ElasticsearchUtil instance = null;
     private static Client client = null;
     private static String clusterName = "";
     private boolean connected;
 
-    private ElasticsearchPoolUtil() {
+    private ElasticsearchUtil() {
 
         connected = false;
     }
 
 
-    public static synchronized ElasticsearchPoolUtil getInstance() {
+    public static synchronized ElasticsearchUtil getInstance() {
 
         if (instance == null) {
-            instance = new ElasticsearchPoolUtil();
+            instance = new ElasticsearchUtil();
             instance.connect();
         }
 

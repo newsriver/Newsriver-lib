@@ -1,12 +1,11 @@
 package ch.newsriver.data.publisher;
 
-import ch.newsriver.dao.ElasticsearchPoolUtil;
+import ch.newsriver.dao.ElasticsearchUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 
 import java.io.IOException;
 
@@ -18,32 +17,31 @@ public class PublisherFactory {
 
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final Logger logger = LogManager.getLogger(PublisherFactory.class);
-    private static  PublisherFactory instance;
+    private static PublisherFactory instance;
 
-    private PublisherFactory(){
+    private PublisherFactory() {
 
     }
 
-    static  public synchronized  PublisherFactory getInstance(){
+    static public synchronized PublisherFactory getInstance() {
 
-        if(instance == null){
+        if (instance == null) {
             instance = new PublisherFactory();
         }
         return instance;
     }
 
 
-
-    public Publisher getPublisher(String domain){
+    public Publisher getPublisher(String domain) {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         Publisher publisher = null;
         try {
             GetResponse response = client.prepareGet("newsriver-publisher", "publisher", domain).execute().actionGet();
             if (response.isExists()) {
                 try {
-                    publisher = mapper.readValue(response.getSourceAsString(),Publisher.class);
+                    publisher = mapper.readValue(response.getSourceAsString(), Publisher.class);
                 } catch (IOException e) {
                     logger.fatal("Unable to deserialize publisher", e);
                     return null;

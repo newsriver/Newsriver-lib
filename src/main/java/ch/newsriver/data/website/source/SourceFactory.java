@@ -1,6 +1,6 @@
 package ch.newsriver.data.website.source;
 
-import ch.newsriver.dao.ElasticsearchPoolUtil;
+import ch.newsriver.dao.ElasticsearchUtil;
 import ch.newsriver.dao.RedisPoolUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.binary.Base64;
@@ -66,7 +66,7 @@ public class SourceFactory {
     public long updateLastVisit(String id) {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         try {
             UpdateRequest updateRequest = new UpdateRequest();
             updateRequest.index("newsriver-source");
@@ -100,7 +100,7 @@ public class SourceFactory {
     public Set<String> nextToVisits(String query) {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         HashSet<String> sources = new HashSet<>();
         try {
 
@@ -145,7 +145,7 @@ public class SourceFactory {
     public boolean setSource(BaseSource source, boolean updateIfExists) {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         String urlHash = getURLHash(source.getUrl());
         try {
             IndexRequest indexRequest = new IndexRequest("newsriver-source", "source", urlHash);
@@ -165,7 +165,7 @@ public class SourceFactory {
     public boolean removeSource(BaseSource source) {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         String urlHash = getURLHash(source.getUrl());
 
 
@@ -184,7 +184,7 @@ public class SourceFactory {
     public BaseSource getSource(String id) {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         BaseSource source = null;
         try {
             GetResponse response = client.prepareGet("newsriver-source", "source", id).execute().actionGet();

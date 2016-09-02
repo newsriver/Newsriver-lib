@@ -1,9 +1,6 @@
 package ch.newsriver.data.content;
 
-import ch.newsriver.dao.ElasticsearchPoolUtil;
-import ch.newsriver.data.publisher.Publisher;
-import ch.newsriver.data.publisher.PublisherFactory;
-import ch.newsriver.data.url.LinkURL;
+import ch.newsriver.dao.ElasticsearchUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,10 +20,6 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -36,30 +29,27 @@ import java.util.List;
 public class ArticleFactory {
 
 
-
-
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final Logger logger = LogManager.getLogger(ArticleFactory.class);
-    private static  ArticleFactory instance;
+    private static ArticleFactory instance;
 
-    private ArticleFactory(){
+    private ArticleFactory() {
 
     }
 
-    static  public synchronized  ArticleFactory getInstance(){
+    static public synchronized ArticleFactory getInstance() {
 
-        if(instance == null){
+        if (instance == null) {
             instance = new ArticleFactory();
         }
         return instance;
     }
 
 
-
-    public List<HighlightedArticle> searchArticles(ArticleRequest searchRequest){
+    public List<HighlightedArticle> searchArticles(ArticleRequest searchRequest) {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         LinkedList<HighlightedArticle> articles = new LinkedList<>();
         try {
             QueryBuilder qb = QueryBuilders.queryStringQuery(searchRequest.getQuery());
@@ -67,7 +57,6 @@ public class ArticleFactory {
             FilterBuilder filter = null;
 
             FieldSortBuilder sortBuilder = SortBuilders.fieldSort("discoverDate").order(SortOrder.DESC).sortMode("max");
-
 
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
@@ -84,7 +73,7 @@ public class ArticleFactory {
                     .addSort(SortBuilders.scoreSort())
                     .setQuery(qb);
 
-            if(searchRequest.getId()!=null){
+            if (searchRequest.getId() != null) {
                 searchRequestBuilder.setPostFilter(QueryBuilders.termQuery("_id", searchRequest.getId()));
             }
 
@@ -92,27 +81,25 @@ public class ArticleFactory {
             //    searchRequestBuilder.addFields(searchRequest.getFields().toArray(new String[0]));
             //}
 
-            SearchResponse response =  searchRequestBuilder.execute().actionGet();
+            SearchResponse response = searchRequestBuilder.execute().actionGet();
             for (SearchHit hit : response.getHits()) {
 
 
-
-
                 try {
-                    HighlightedArticle article =  mapper.readValue(hit.getSourceAsString(),HighlightedArticle.class);
+                    HighlightedArticle article = mapper.readValue(hit.getSourceAsString(), HighlightedArticle.class);
                     article.setId(hit.getId());
                     article.setScore(hit.getScore());
 
-                    for(HighlightField filed: hit.getHighlightFields().values()){
+                    for (HighlightField filed : hit.getHighlightFields().values()) {
 
-                        if(filed.getFragments() == null || filed.getFragments().length<1) continue;
+                        if (filed.getFragments() == null || filed.getFragments().length < 1) continue;
 
                         Text fragmentText = filed.getFragments()[0];
 
 
-                        if(filed.getName().equalsIgnoreCase("title")){
+                        if (filed.getName().equalsIgnoreCase("title")) {
                             article.setHighlight(fragmentText.toString());
-                        }else if(article.getHighlight() == null){
+                        } else if (article.getHighlight() == null) {
                             article.setHighlight(fragmentText.toString());
                         }
                     }
@@ -132,9 +119,9 @@ public class ArticleFactory {
     }
 
 
-    public boolean updateArticle(Article article){
+    public boolean updateArticle(Article article) {
 
-        Client client = ElasticsearchPoolUtil.getInstance().getClient();
+        Client client = ElasticsearchUtil.getInstance().getClient();
         try {
 
             IndexRequest indexRequest = new IndexRequest("newsriver", "article", article.getId());
@@ -151,9 +138,9 @@ public class ArticleFactory {
         }
     }
 
-    public Article getArticle(String id){
+    public Article getArticle(String id) {
 
-        Client client = ElasticsearchPoolUtil.getInstance().getClient();
+        Client client = ElasticsearchUtil.getInstance().getClient();
 
 
         try {

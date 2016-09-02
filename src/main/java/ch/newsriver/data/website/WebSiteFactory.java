@@ -1,6 +1,6 @@
 package ch.newsriver.data.website;
 
-import ch.newsriver.dao.ElasticsearchPoolUtil;
+import ch.newsriver.dao.ElasticsearchUtil;
 import ch.newsriver.dao.RedisPoolUtil;
 import ch.newsriver.data.website.source.BaseSource;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,6 +17,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.support.QueryInnerHitBuilder;
 import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
 import redis.clients.jedis.Jedis;
@@ -63,7 +64,7 @@ public class WebSiteFactory {
 
     public WebSite getWebsite(String host) {
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         WebSite webSite = null;
         try {
             GetResponse response = client.prepareGet("newsriver-website", "website", host.toLowerCase().trim()).execute().actionGet();
@@ -92,7 +93,7 @@ public class WebSiteFactory {
 
     private List<WebSite> searchWebsitesWithQuery(String query) {
         Client client;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         LinkedList<WebSite> websites = new LinkedList<>();
 
         try {
@@ -119,7 +120,7 @@ public class WebSiteFactory {
 
     public boolean updateWebsite(WebSite webSite) {
 
-        Client client = ElasticsearchPoolUtil.getInstance().getClient();
+        Client client = ElasticsearchUtil.getInstance().getClient();
         try {
 
             IndexRequest indexRequest = new IndexRequest("newsriver-website", "website", webSite.getHostName().toLowerCase().trim());
@@ -142,7 +143,7 @@ public class WebSiteFactory {
     public HashMap<String, BaseSource> nextWebsiteSourcesToVisits() {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         HashMap<String, BaseSource> selectedSources = new HashMap<>();
         try {
 
@@ -210,7 +211,7 @@ public class WebSiteFactory {
     public List<BaseSource> nextWebsiteToVisits() {
 
         Client client = null;
-        client = ElasticsearchPoolUtil.getInstance().getClient();
+        client = ElasticsearchUtil.getInstance().getClient();
         List<BaseSource> sources = new LinkedList<>();
         try {
 
@@ -289,22 +290,27 @@ public class WebSiteFactory {
         String lastVisit = dateFormatter.format(new Date());
         //This script iterates trough all sources of a website and
         //updates the lastVisit field of the specific source.
-        Script updateSource = new Script("ctx._source['lastUpdate']='" + lastVisit + "' \n " +
+
+        Map<String, String> params = new HashMap<>();
+        params.put("lastVisit", lastVisit);
+        params.put("url", source.getUrl());
+
+        final String updateScritp = "ctx._source['lastUpdate']=lastVisit \n " +
                 "for (item in ctx._source.sources) {" +
-                "if (item['url'] == '" + source.getUrl() + "') { " +
-                "item['lastVisit'] = '" + lastVisit +
-                "'}" +
-                "}");
+                "   if (item['url'] == url) { " +
+                "      item['lastVisit'] =  lastVisit " +
+                "   }" +
+                "}";
 
 
-        Client client = ElasticsearchPoolUtil.getInstance().getClient();
+        Client client = ElasticsearchUtil.getInstance().getClient();
         try {
 
             UpdateRequest updateRequest = new UpdateRequest();
             updateRequest.index("newsriver-website")
                     .type("website")
                     .id(hostname)
-                    .script(updateSource)
+                    .script(new Script(updateScritp, ScriptService.ScriptType.INLINE, null, params))
                     .retryOnConflict(0);
 
 
