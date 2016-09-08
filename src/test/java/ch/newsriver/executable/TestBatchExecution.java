@@ -1,12 +1,14 @@
-package ch.newsriver.test.executable;
+package ch.newsriver.executable;
 
 import ch.newsriver.executable.poolExecution.BatchInterruptibleWithinExecutorPool;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertTrue;
 import java.time.Duration;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by eliapalme on 15/03/16.
@@ -30,14 +32,13 @@ public class TestBatchExecution {
 
 
     @Test
-    public void runSingleTask() throws InterruptedException,BatchInterruptibleWithinExecutorPool.BatchSizeException {
+    public void runSingleTask() throws InterruptedException, BatchInterruptibleWithinExecutorPool.BatchSizeException {
 
         int sleep = 100;
         int sleepMargin = 10;
         int numberRuns = 10;
         int poolSize = 5;
-        TestBatchInterruptibleWithinExecutorPool pool = new TestBatchInterruptibleWithinExecutorPool(poolSize,numberRuns,Duration.ofMillis(sleep));
-
+        TestBatchInterruptibleWithinExecutorPool pool = new TestBatchInterruptibleWithinExecutorPool(poolSize, numberRuns, Duration.ofMillis(sleep));
 
 
         Semaphore semaphore = new Semaphore(0);
@@ -46,19 +47,19 @@ public class TestBatchExecution {
         //we need to schedule numberOfThreads + poolSize to make sure the queue is full so the next time we call waitFreeBatchExecutors
         //it will wait till numberOfThreads have finished to execute, this will also ensure the semaphore as numberOfThreads releases.
 
-        for(int i=0;i<numberRuns*+poolSize;i++){
+        for (int i = 0; i < numberRuns * +poolSize; i++) {
             final int j = i;
             CompletableFuture<String> feature = new CompletableFuture();
             feature = feature.supplyAsync(() -> {
-                    try {
-                        Thread.sleep(sleep - sleepMargin);
-                    }catch (InterruptedException e){
-                        assertNull(e);
-                    }
-                    if(j < numberRuns){
-                        semaphore.release();
-                    }
-                    return "ok";
+                try {
+                    Thread.sleep(sleep - sleepMargin);
+                } catch (InterruptedException e) {
+                    assertNull(e);
+                }
+                if (j < numberRuns) {
+                    semaphore.release();
+                }
+                return "ok";
             }, pool);
         }
         pool.waitFreeBatchExecutors(numberRuns);
@@ -66,9 +67,9 @@ public class TestBatchExecution {
 
     }
 
-    public static  class  TestBatchInterruptibleWithinExecutorPool extends BatchInterruptibleWithinExecutorPool{
-        public TestBatchInterruptibleWithinExecutorPool(int threads,int batch, Duration duration){
-            super(threads,batch,duration);
+    public static class TestBatchInterruptibleWithinExecutorPool extends BatchInterruptibleWithinExecutorPool {
+        public TestBatchInterruptibleWithinExecutorPool(int threads, int batch, Duration duration) {
+            super(threads, batch, duration);
 
         }
 

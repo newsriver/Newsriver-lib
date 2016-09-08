@@ -1,4 +1,4 @@
-package ch.newsriver.test.json;
+package ch.newsriver.json;
 
 import ch.newsriver.data.content.Article;
 import ch.newsriver.data.metadata.FinancialSentiment;

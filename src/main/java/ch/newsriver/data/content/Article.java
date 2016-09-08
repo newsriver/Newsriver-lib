@@ -31,6 +31,8 @@ public class Article {
     @JsonView(JSONViews.Public.class)
     String text;
     @JsonView(JSONViews.Public.class)
+    String structuredText;
+    @JsonView(JSONViews.Public.class)
     String url;
     @JsonView(JSONViews.Public.class)
     @JsonDeserialize(as = LinkedList.class)
@@ -135,6 +137,14 @@ public class Article {
         this.metadata.put(metadata.key(), metadata);
     }
 
+    public String getStructuredText() {
+        return structuredText;
+    }
+
+    public void setStructuredText(String structuredText) {
+        this.structuredText = structuredText;
+    }
+
     static public class JSONViews {
         static public interface Public {
         }
@@ -145,7 +155,6 @@ public class Article {
         static public interface Internal extends API {
         }
     }
-
 }
 
 

@@ -3,7 +3,6 @@ package ch.newsriver.data.website;
 import ch.newsriver.dao.ElasticsearchUtil;
 import ch.newsriver.dao.RedisPoolUtil;
 import ch.newsriver.data.website.source.BaseSource;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +23,12 @@ import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -36,15 +40,15 @@ public class WebSiteFactory {
     private final static int SOURCE_TO_FETCH_X = 10;  //fecth from Elastic X times more source and than randobly chose up to SOURCE_TO_FETCH. //IF there are too many conflicts increase this.
     private final static String REDIS_KEY_PREFIX = "visSource";
     private final static String REDIS_KEY_VERSION = "4";
-    private final static int GRACETIME_SECONDS = 60 * 5; //about 5 min
-    private final static Long GRACETIME_MILLISECONDS = ((long) GRACETIME_SECONDS) * 1000l;
+    private final static Long GRACETIME_MILLISECONDS = 60l * 5l * 1000l; //about 5 min
+    private final static int TROTTLE_TIMOUT = 2; //two seconds;
     private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private static final Logger logger = LogManager.getLogger(WebSiteFactory.class);
     private static final ObjectMapper mapper = new ObjectMapper();
     private static String visitedScript = "local current\n" +
             "current = redis.call(\"incr\",KEYS[1])\n" +
             "if tonumber(current) == 1 then\n" +
-            "    redis.call(\"expire\",KEYS[1]," + GRACETIME_SECONDS + ")\n" +
+            "    redis.call(\"expire\",KEYS[1]," + TROTTLE_TIMOUT + ")\n" +
             "end\n" +
             "return current";
     private static WebSiteFactory instance;
@@ -137,10 +141,14 @@ public class WebSiteFactory {
         }
     }
 
+    public HashMap<String, BaseSource> nextWebsiteSourcesToVisits() {
+        return nextWebsiteSourcesToVisits("*");
+    }
+
 
     //TODO: avoid using this methos as it currently couses ES to go crazy
     //The issue is due to the setSourceVisited method that run update scripts on ES
-    public HashMap<String, BaseSource> nextWebsiteSourcesToVisits() {
+    public HashMap<String, BaseSource> nextWebsiteSourcesToVisits(String query) {
 
         Client client = null;
         client = ElasticsearchUtil.getInstance().getClient();
@@ -148,8 +156,8 @@ public class WebSiteFactory {
         try {
 
 
-            QueryBuilder qb = QueryBuilders.nestedQuery("sources", QueryBuilders.rangeQuery("sources.lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS)).innerHit(new QueryInnerHitBuilder().setName("source"));
-            ;
+            QueryBuilder qb = QueryBuilders.nestedQuery("sources", QueryBuilders.queryStringQuery(query)).innerHit(new QueryInnerHitBuilder().setName("source"));
+
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
                     .setIndices("newsriver-website")
@@ -157,10 +165,8 @@ public class WebSiteFactory {
                     .setSize(SOURCE_TO_FETCH * SOURCE_TO_FETCH_X)
                     .addSort("sources.lastVisit", SortOrder.ASC)
                     .addFields("_id")
-                    .setQuery(qb);
-
-            //.setPostFilter(QueryBuilders.nestedQuery("sources", QueryBuilders.existsQuery("lastVisit")));
-            //.setPostFilter(QueryBuilders.rangeQuery("lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS));
+                    .setQuery(qb)
+                    .setPostFilter(QueryBuilders.rangeQuery("lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS));
 
 
             SearchResponse response = searchRequestBuilder.execute().actionGet();
@@ -189,7 +195,6 @@ public class WebSiteFactory {
                     String sourceId = ids.pollFirst();
 
                     if (!setVisited(sourceId)) {
-                        logger.warn("Conflict found, the source was recently visited id:" + sourceId);
                         continue;
                     }
                     selectedSources.put(sourceId, candidates.get(sourceId));
@@ -206,80 +211,17 @@ public class WebSiteFactory {
     }
 
 
-    //TODO: we should find a better soltution to this method something like: nextWebsiteSourcesToVisits that is not get the next sources to crawl and not
-    //the next website. This bacause getting the next website means making a lot of requests to the same domain.
-    public List<BaseSource> nextWebsiteToVisits() {
-
-        Client client = null;
-        client = ElasticsearchUtil.getInstance().getClient();
-        List<BaseSource> sources = new LinkedList<>();
-        try {
-
-            QueryBuilder qb = QueryBuilders.queryStringQuery("*");
-
-            SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
-                    .setIndices("newsriver-website")
-                    .setTypes("website")
-                    .setSize(SOURCE_TO_FETCH * SOURCE_TO_FETCH_X)
-                    .addSort("lastVisit", SortOrder.ASC)
-                    .addFields("_id", "lastVisit", "sources")
-                    .setQuery(qb)
-                    .setPostFilter(QueryBuilders.rangeQuery("lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS));
-
-
-            SearchResponse response = searchRequestBuilder.execute().actionGet();
-            Map<String, List<BaseSource>> candidate = new HashMap<>();
-            response.getHits().forEach(hit -> {
-
-                List<BaseSource> webStieSources;
-                try {
-                    webStieSources = mapper.readValue((String) hit.getSource().get("sources"), new TypeReference<LinkedList<BaseSource>>() {
-                    });
-                    candidate.put(hit.getId(), webStieSources);
-                } catch (Exception e) {
-                    logger.error("Unable to deserialise source", e);
-                }
-
-            });
-
-            LinkedList<String> websites = new LinkedList<>(candidate.keySet());
-            Collections.shuffle(websites);
-
-            if (!candidate.isEmpty()) {
-                do {
-                    String sourceId = websites.pollFirst();
-
-                    if (!setVisited(sourceId)) {
-                        logger.warn("Conflict found, the source was recently visited id:" + sourceId);
-                        continue;
-                    }
-                    sources.addAll(candidate.get(sourceId));
-                } while (sources.size() < SOURCE_TO_FETCH && !candidate.isEmpty());
-            }
-
-
-        } catch (Exception e) {
-            logger.error("Unable to get articles from elasticsearch", e);
-        } finally {
-        }
-        //shuffle the sources to avoid crawling several sources of a same domain in a row
-        Collections.shuffle(sources);
-        return sources;
-    }
-
-
-    private String getKey(String id) {
+    private String getKey(String websiteHost) {
         StringBuilder builder = new StringBuilder();
         return builder.append(REDIS_KEY_PREFIX).append(":")
                 .append(REDIS_KEY_VERSION).append(":")
-                .append(id).toString();
+                .append(websiteHost).toString();
     }
 
 
-    public boolean setVisited(String id) {
-        boolean newVisit;
+    public boolean setVisited(String websiteHost) {
         try (Jedis jedis = RedisPoolUtil.getInstance().getResource(RedisPoolUtil.DATABASES.VISITED_URLS)) {
-            Long counter = (Long) jedis.eval(visitedScript, 1, getKey(id));
+            Long counter = (Long) jedis.eval(visitedScript, 1, getKey(websiteHost));
             return counter == 1;
         }
     }
@@ -312,7 +254,6 @@ public class WebSiteFactory {
                     .id(hostname)
                     .script(new Script(updateScritp, ScriptService.ScriptType.INLINE, null, params))
                     .retryOnConflict(0);
-
 
             return client.update(updateRequest).get().getVersion();
 

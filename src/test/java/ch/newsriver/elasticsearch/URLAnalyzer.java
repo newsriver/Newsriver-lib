@@ -1,4 +1,4 @@
-package ch.newsriver.test.elasticsearch;
+package ch.newsriver.elasticsearch;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.UAX29URLEmailTokenizer;
