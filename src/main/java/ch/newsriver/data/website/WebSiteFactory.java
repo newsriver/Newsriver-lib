@@ -146,8 +146,7 @@ public class WebSiteFactory {
     }
 
 
-    //TODO: avoid using this methos as it currently couses ES to go crazy
-    //The issue is due to the setSourceVisited method that run update scripts on ES
+
     public HashMap<String, BaseSource> nextWebsiteSourcesToVisits(String query) {
 
         Client client = null;
@@ -156,7 +155,7 @@ public class WebSiteFactory {
         try {
 
 
-            QueryBuilder qb = QueryBuilders.nestedQuery("sources", QueryBuilders.queryStringQuery(query)).innerHit(new QueryInnerHitBuilder().setName("source"));
+            QueryBuilder qb = QueryBuilders.nestedQuery("sources", QueryBuilders.rangeQuery("sources.lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS)).innerHit(new QueryInnerHitBuilder().setName("source"));
 
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
@@ -165,8 +164,7 @@ public class WebSiteFactory {
                     .setSize(SOURCE_TO_FETCH * SOURCE_TO_FETCH_X)
                     .addSort("sources.lastVisit", SortOrder.ASC)
                     .addFields("_id")
-                    .setQuery(qb)
-                    .setPostFilter(QueryBuilders.rangeQuery("lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS));
+                    .setQuery(qb);
 
 
             SearchResponse response = searchRequestBuilder.execute().actionGet();
@@ -253,7 +251,7 @@ public class WebSiteFactory {
                     .type("website")
                     .id(hostname)
                     .script(new Script(updateScritp, ScriptService.ScriptType.INLINE, null, params))
-                    .retryOnConflict(0);
+                    .retryOnConflict(3);
 
             return client.update(updateRequest).get().getVersion();
 
