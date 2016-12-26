@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -63,8 +64,7 @@ public class TestBatchExecution {
             }, pool);
         }
         pool.waitFreeBatchExecutors(numberRuns);
-        Thread.sleep(sleep);
-        assertTrue(semaphore.tryAcquire(numberRuns));
+        assertTrue(semaphore.tryAcquire(numberRuns, 1000, TimeUnit.MILLISECONDS));
 
     }
 
