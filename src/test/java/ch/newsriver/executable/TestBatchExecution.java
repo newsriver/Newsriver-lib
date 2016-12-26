@@ -63,6 +63,7 @@ public class TestBatchExecution {
             }, pool);
         }
         pool.waitFreeBatchExecutors(numberRuns);
+        Thread.sleep(sleep);
         assertTrue(semaphore.tryAcquire(numberRuns));
 
     }
