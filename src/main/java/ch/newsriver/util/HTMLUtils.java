@@ -27,7 +27,11 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -165,7 +169,7 @@ public class HTMLUtils {
         }*/
         Set<String> urls = new HashSet<>();
         String htlmSrc = null;
-        WebDriver driver = new RemoteWebDriver(new URL("http://46.4.71.105:31555"), DesiredCapabilities.phantomjs());
+        WebDriver driver = new RemoteWebDriver(new URL("http://newsriver-phantomjs.newsriver.marathon.cluster.newsriver.io:31555"), DesiredCapabilities.phantomjs());
         try {
 
             driver.navigate().to(url);
