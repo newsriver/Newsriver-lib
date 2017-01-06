@@ -8,11 +8,11 @@ import java.util.List;
 public class ArticleRequest {
 
 
-    private String query;
+    private String query = null;
     private List<String> domains;
     private List<String> countries;
     private List<String> languages;
-    private int     limit = 100;
+    private int limit = 100;
     private String id;
     private List<String> fields;
 

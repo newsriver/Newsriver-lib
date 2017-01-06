@@ -56,11 +56,15 @@ public class ArticleFactory {
         return instance;
     }
 
-
     public List<HighlightedArticle> searchArticles(ArticleRequest searchRequest) {
-
         Client client = null;
         client = ElasticsearchUtil.getInstance().getClient();
+        return this.searchArticles(searchRequest, client);
+    }
+
+    public List<HighlightedArticle> searchArticles(ArticleRequest searchRequest, Client client) {
+
+
         LinkedList<HighlightedArticle> articles = new LinkedList<>();
         try {
             QueryBuilder qb = QueryBuilders.queryStringQuery(searchRequest.getQuery());
@@ -129,14 +133,20 @@ public class ArticleFactory {
         return articles;
     }
 
-    public IndexResponse saveArticle(Article article, String urlHash){
-        Client client = ElasticsearchUtil.getInstance().getClient();
+    public IndexResponse saveArticle(Article article, String urlHash) {
+        Client client = null;
+        client = ElasticsearchUtil.getInstance().getClient();
+        return this.saveArticle(article, urlHash, client);
+    }
+
+    public IndexResponse saveArticle(Article article, String urlHash, Client client) {
+
         try {
 
             IndexRequest indexRequest = new IndexRequest("newsriver", "article", urlHash);
 
             indexRequest.source(mapper.writeValueAsString(article));
-            return  client.index(indexRequest).actionGet();
+            return client.index(indexRequest).actionGet();
 
         } catch (Exception e) {
             logger.error("Unable to save article in elasticsearch", e);

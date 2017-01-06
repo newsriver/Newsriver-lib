@@ -1,17 +1,13 @@
 package ch.newsriver.executable.poolExecution;
 
-import ch.newsriver.dao.RedisPoolUtil;
 import ch.newsriver.executable.Main;
-import ch.newsriver.util.http.HttpClientPool;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by eliapalme on 15/04/16.
@@ -28,10 +24,33 @@ public abstract class MainWithPoolExecutorOptions extends Main {
 
     private static final LinkedList<Option> additionalOptions = new LinkedList<>();
 
+    static {
+        additionalOptions.add(Option.builder("t").longOpt("threads").hasArg().type(Number.class).desc("Number of executor threads").build());
+        additionalOptions.add(Option.builder("b").longOpt("batch").hasArg().type(Number.class).desc("Execution batch size").build());
+        additionalOptions.add(Option.builder("q").longOpt("queue").hasArg().type(Number.class).desc("Executable task queue size").build());
+        additionalOptions.add(Option.builder("pr").longOpt("priority").desc("Consume and Produce in priority topics").build());
+    }
+
     private int poolSize;
     private int batchSize;
     private int queueSize;
     private boolean priority;
+
+
+    public MainWithPoolExecutorOptions(String[] args, List<Option> addOptions, boolean runConsole) {
+        super(args, combine(additionalOptions, addOptions), runConsole);
+
+    }
+
+    public MainWithPoolExecutorOptions(String[] args, boolean runConsole) {
+        super(args, additionalOptions, runConsole);
+
+    }
+
+    private static List<Option> combine(List<Option> lista, List<Option> listb) {
+        lista.addAll(listb);
+        return lista;
+    }
 
     public int getPoolSize() {
         return poolSize;
@@ -45,20 +64,9 @@ public abstract class MainWithPoolExecutorOptions extends Main {
         return queueSize;
     }
 
-    public boolean isPriority() {return priority;}
-
-    static {
-        additionalOptions.add(Option.builder("t").longOpt("threads").hasArg().type(Number.class).desc("Number of executor threads").build());
-        additionalOptions.add(Option.builder("b").longOpt("batch").hasArg().type(Number.class).desc("Execution batch size").build());
-        additionalOptions.add(Option.builder("q").longOpt("queue").hasArg().type(Number.class).desc("Executable task queue size").build());
-        additionalOptions.add(Option.builder("pr").longOpt("priority").desc("Consume and Produce in priority topics").build());
+    public boolean isPriority() {
+        return priority;
     }
-
-    public MainWithPoolExecutorOptions(String[] args, boolean runConsole) {
-        super(args, additionalOptions, runConsole);
-
-    }
-
 
     @Override
     protected void readParameters() {
@@ -97,7 +105,14 @@ public abstract class MainWithPoolExecutorOptions extends Main {
             this.priority = true;
         }
 
+    }
 
+    protected String getCustomOption(String optionName) {
+
+        if (this.getCmd().hasOption(optionName)) {
+            return this.getCmd().getOptionValue(optionName);
+        }
+        return null;
     }
 
 
