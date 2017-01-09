@@ -95,7 +95,11 @@ public class WebSiteFactory {
         return searchWebsitesWithQuery("domainName:\"" + domain + "\"");
     }
 
-    private List<WebSite> searchWebsitesWithQuery(String query) {
+    public List<WebSite> searchWebsitesWithQuery(String query) {
+        return searchWebsitesWithQuery(query, -1);
+    }
+
+    public List<WebSite> searchWebsitesWithQuery(String query, int limit) {
         Client client;
         client = ElasticsearchUtil.getInstance().getClient();
         LinkedList<WebSite> websites = new LinkedList<>();
@@ -107,6 +111,10 @@ public class WebSiteFactory {
                     .setIndices("newsriver-website")
                     .setTypes("website")
                     .setQuery(qb);
+
+            if (limit > 0) {
+                searchRequestBuilder = searchRequestBuilder.setSize(limit);
+            }
 
             SearchResponse response = searchRequestBuilder.execute().actionGet();
 
@@ -144,7 +152,6 @@ public class WebSiteFactory {
     public HashMap<String, BaseSource> nextWebsiteSourcesToVisits() {
         return nextWebsiteSourcesToVisits("*");
     }
-
 
 
     public HashMap<String, BaseSource> nextWebsiteSourcesToVisits(String query) {

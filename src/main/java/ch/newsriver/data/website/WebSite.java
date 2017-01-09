@@ -205,7 +205,7 @@ public class WebSite {
         public static interface ArticleNested extends Public {
         }
 
-        public static interface API extends Public {
+        public static interface API extends ArticleNested {
         }
 
         public static interface Internal extends API {
