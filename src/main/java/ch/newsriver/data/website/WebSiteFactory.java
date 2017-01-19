@@ -6,17 +6,19 @@ import ch.newsriver.data.website.source.BaseSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.InnerHitBuilder;
+import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.support.QueryInnerHitBuilder;
 import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
 import redis.clients.jedis.Jedis;
@@ -162,7 +164,8 @@ public class WebSiteFactory {
         try {
 
 
-            QueryBuilder qb = QueryBuilders.nestedQuery("sources", QueryBuilders.rangeQuery("sources.lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS)).innerHit(new QueryInnerHitBuilder().setName("source"));
+            NestedQueryBuilder qb = QueryBuilders.nestedQuery("sources", QueryBuilders.rangeQuery("sources.lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS), ScoreMode.Max);
+            qb.innerHit(new InnerHitBuilder().setName("source"));
 
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
@@ -170,7 +173,8 @@ public class WebSiteFactory {
                     .setTypes("website")
                     .setSize(SOURCE_TO_FETCH * SOURCE_TO_FETCH_X)
                     .addSort("sources.lastVisit", SortOrder.ASC)
-                    .addFields("_id")
+                    .addStoredField("_id")
+                    .setFetchSource(false) //TODO: this can may be removed.
                     .setQuery(qb);
 
 
@@ -238,9 +242,10 @@ public class WebSiteFactory {
         //This script iterates trough all sources of a website and
         //updates the lastVisit field of the specific source.
 
-        Map<String, String> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("lastVisit", lastVisit);
         params.put("url", source.getUrl());
+
 
         final String updateScritp = "ctx._source['lastUpdate']=lastVisit \n " +
                 "for (item in ctx._source.sources) {" +
@@ -257,7 +262,7 @@ public class WebSiteFactory {
             updateRequest.index("newsriver-website")
                     .type("website")
                     .id(hostname)
-                    .script(new Script(updateScritp, ScriptService.ScriptType.INLINE, null, params))
+                    .script(new Script(ScriptType.INLINE, "groovy", updateScritp, params))
                     .retryOnConflict(3);
 
             return client.update(updateRequest).get().getVersion();
