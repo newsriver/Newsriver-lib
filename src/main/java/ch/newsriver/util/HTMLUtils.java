@@ -169,7 +169,7 @@ public class HTMLUtils {
         }*/
         Set<String> urls = new HashSet<>();
         String htlmSrc = null;
-        WebDriver driver = new RemoteWebDriver(new URL("http://newsriver-phantomjs.newsriver.marathon.cluster.newsriver.io:31555"), DesiredCapabilities.phantomjs());
+        WebDriver driver = new RemoteWebDriver(new URL("http://newsriver-phantomjs.newsriver.marathon.services.newsriver.io:31555"), DesiredCapabilities.phantomjs());
         try {
 
             driver.navigate().to(url);
