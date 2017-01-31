@@ -5,7 +5,6 @@ import ch.newsriver.data.website.WebSite;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.queryparser.xml.FilterBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
@@ -16,9 +15,11 @@ import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.highlight.HighlightField;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortMode;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
@@ -69,20 +70,15 @@ public class ArticleFactory {
         try {
             QueryBuilder qb = QueryBuilders.queryStringQuery(searchRequest.getQuery());
 
-            FilterBuilder filter = null;
 
-            FieldSortBuilder sortBuilder = SortBuilders.fieldSort("discoverDate").order(SortOrder.DESC).sortMode("max");
+            FieldSortBuilder sortBuilder = SortBuilders.fieldSort("discoverDate").order(SortOrder.DESC).sortMode(SortMode.MAX);
 
+            HighlightBuilder hilight = new HighlightBuilder().field("title").field("text").preTags("<highlighted>").postTags("</highlighted>").numOfFragments(1).requireFieldMatch(true);
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
                     .setIndices("newsriver")
                     .setTypes("article")
-                    .addHighlightedField("title")
-                    .addHighlightedField("text")
-                    .setHighlighterPreTags("<highlighted>")
-                    .setHighlighterPostTags("</highlighted>")
-                    .setHighlighterRequireFieldMatch(false)
-                    .setHighlighterNumOfFragments(1)
+                    .highlighter(hilight)
                     .setSize(searchRequest.getLimit())
                     .addSort(sortBuilder)
                     .addSort(SortBuilders.scoreSort())

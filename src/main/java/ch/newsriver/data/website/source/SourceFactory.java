@@ -14,9 +14,10 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.index.engine.DocumentAlreadyExistsException;
+import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.sort.SortOrder;
 import redis.clients.jedis.Jedis;
 
@@ -25,7 +26,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -111,7 +116,8 @@ public class SourceFactory {
                     .setTypes("source")
                     .setSize(SOURCE_TO_FETCH * SOURCE_TO_FETCH_X)
                     .addSort("lastVisit", SortOrder.ASC)
-                    .addFields("_id", "lastVisit")
+                    .addStoredField("_id")
+                    .addStoredField("lastVisit") //TODO: make sure to update the model
                     .setQuery(qb)
                     .setPostFilter(QueryBuilders.rangeQuery("lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS));
 
@@ -153,7 +159,7 @@ public class SourceFactory {
             indexRequest.create(!updateIfExists);
             IndexResponse response = client.index(indexRequest).actionGet();
             return (response != null && response.getId() != null && !response.getId().isEmpty());
-        } catch (DocumentAlreadyExistsException e) {
+        } catch (VersionConflictEngineException e) {
             logger.warn("Unable to save source, the document already exists");
         } catch (Exception e) {
             logger.error("Unable to save source", e);
@@ -174,7 +180,7 @@ public class SourceFactory {
                     .execute()
                     .actionGet();
 
-            return response.isFound();
+            return response.status() == RestStatus.FOUND;
         } catch (Exception e) {
             logger.error("Unable to delete source", e);
         }
