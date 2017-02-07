@@ -1,18 +1,34 @@
 package ch.newsriver.executable;
 
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Created by eliapalme on 11/03/16.
@@ -31,10 +47,6 @@ public abstract class Main {
     private String instanceName = "stand-alone";
     private int port;
 
-
-    public static Main getInstance(){
-        return instance;
-    }
 
     public Main(String[] args, boolean runConsole) {
 
@@ -108,7 +120,9 @@ public abstract class Main {
 
     }
 
-
+    public static Main getInstance() {
+        return instance;
+    }
 
     private static String getPid() {
 
@@ -175,6 +189,7 @@ public abstract class Main {
         result.append("Instance Name: ").append(instance.getInstanceName()).append("\n");
         result.append("PORT: ").append(instance.getPort()).append("\n");
         result.append("PID: ").append(getPid()).append("\n");
+        result.append("Max Heap: ").append(new Float((float) Runtime.getRuntime().maxMemory() / 1048576f).intValue()).append(" MB\n");
         result.append(fmt.format(new Date())).append("\n");
 
         return result.toString();
