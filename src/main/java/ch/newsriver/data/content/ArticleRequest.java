@@ -1,5 +1,7 @@
 package ch.newsriver.data.content;
 
+import org.elasticsearch.search.sort.SortOrder;
+
 import java.util.List;
 
 /**
@@ -15,6 +17,8 @@ public class ArticleRequest {
     private int limit = 100;
     private String id;
     private List<String> fields;
+    private String sortBy = null;
+    private SortOrder sortOrder = null;
 
     public String getQuery() {
         return query;
@@ -70,5 +74,21 @@ public class ArticleRequest {
 
     public void setFields(List<String> fields) {
         this.fields = fields;
+    }
+
+    public String getSortBy() {
+        return sortBy;
+    }
+
+    public void setSortBy(String sortBy) {
+        this.sortBy = sortBy;
+    }
+
+    public SortOrder getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(SortOrder sortOrder) {
+        this.sortOrder = sortOrder;
     }
 }

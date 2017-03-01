@@ -20,7 +20,6 @@ import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortMode;
-import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -71,8 +70,6 @@ public class ArticleFactory {
             QueryBuilder qb = QueryBuilders.queryStringQuery(searchRequest.getQuery());
 
 
-            FieldSortBuilder sortBuilder = SortBuilders.fieldSort("discoverDate").order(SortOrder.DESC).sortMode(SortMode.MAX);
-
             HighlightBuilder hilight = new HighlightBuilder().field("title").field("text").preTags("<highlighted>").postTags("</highlighted>").numOfFragments(1).requireFieldMatch(true);
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
@@ -80,13 +77,18 @@ public class ArticleFactory {
                     .setTypes("article")
                     .highlighter(hilight)
                     .setSize(searchRequest.getLimit())
-                    .addSort(sortBuilder)
-                    .addSort(SortBuilders.scoreSort())
                     .setQuery(qb);
 
             if (searchRequest.getId() != null) {
                 searchRequestBuilder.setPostFilter(QueryBuilders.termQuery("_id", searchRequest.getId()));
             }
+
+            //Order by field and then by score, or only by score if no field is defined
+            if (searchRequest.getSortBy() != null && !searchRequest.getSortBy().equalsIgnoreCase("_score")) {
+                FieldSortBuilder sortBuilder = SortBuilders.fieldSort(searchRequest.getSortBy()).order(searchRequest.getSortOrder()).sortMode(SortMode.MAX);
+                searchRequestBuilder.addSort(sortBuilder);
+            }
+            searchRequestBuilder.addSort(SortBuilders.scoreSort());
 
             //if(searchRequest.getFields()!=null && !searchRequest.getFields().isEmpty()){
             //    searchRequestBuilder.addFields(searchRequest.getFields().toArray(new String[0]));
