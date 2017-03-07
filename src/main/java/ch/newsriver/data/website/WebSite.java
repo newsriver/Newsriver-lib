@@ -49,7 +49,7 @@ public class WebSite {
     Set<String> languages = new HashSet<>();
     @JsonView(JSONViews.Internal.class)
     boolean ajaxBased = false;
-    @JsonView(JSONViews.Internal.class)
+    @JsonView(JSONViews.API.class)
     List<BaseSource> sources = new LinkedList<>();
 
 
