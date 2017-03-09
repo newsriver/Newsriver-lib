@@ -20,6 +20,8 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import redis.clients.jedis.Jedis;
 
@@ -152,10 +154,47 @@ public class WebSiteFactory {
     }
 
     public HashMap<String, BaseSource> nextWebsiteSourcesToVisits() {
-        return nextWebsiteSourcesToVisits("*");
+        // example with query return nextWebsiteSourcesToVisits("\"corriere del ticino\"");
+        return nextWebsiteSourcesToVisits(null);
     }
 
 
+    /*
+    The search next website to visit is based on the following query
+    Note that nested filtering is required in order to sort for the lowest visited source date.
+
+    GET /newsriver-website/_search/
+    {
+        "query": {
+            "nested" : {
+                "path" : "sources",
+                "score_mode" : "min",
+                "query": {
+            "range" : {
+                "sources.lastVisit" : {
+                    "lte": "now"
+                }
+            }
+        }
+            }
+        },
+
+        "sort": {
+        "sources.lastVisit": {
+          "order": "asc",
+            "nested_path": "sources",
+            "nested_filter": {
+              "range" : {
+                "sources.lastVisit" : {
+                    "lte": "now"
+                }
+            }
+            }
+          }
+        }
+      }
+    }
+     */
     public HashMap<String, BaseSource> nextWebsiteSourcesToVisits(String query) {
 
         Client client = null;
@@ -163,16 +202,25 @@ public class WebSiteFactory {
         HashMap<String, BaseSource> selectedSources = new HashMap<>();
         try {
 
+            QueryBuilder qb = null;
+            NestedQueryBuilder qnt = QueryBuilders.nestedQuery("sources", QueryBuilders.rangeQuery("sources.lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS), ScoreMode.Min);
+            qnt.innerHit(new InnerHitBuilder().setName("source"));
+            if (query == null) {
+                qb = qnt;
+            } else {
+                qb = QueryBuilders.boolQuery().must(QueryBuilders.queryStringQuery(query)).must(qnt);
+            }
 
-            NestedQueryBuilder qb = QueryBuilders.nestedQuery("sources", QueryBuilders.rangeQuery("sources.lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS), ScoreMode.Max);
-            qb.innerHit(new InnerHitBuilder().setName("source"));
-
+            FieldSortBuilder sort = SortBuilders.fieldSort("sources.lastVisit")
+                    .setNestedPath("sources")
+                    .setNestedFilter(QueryBuilders.rangeQuery("sources.lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS))
+                    .order(SortOrder.ASC);
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
                     .setIndices("newsriver-website")
                     .setTypes("website")
+                    .addSort(sort)
                     .setSize(SOURCE_TO_FETCH * SOURCE_TO_FETCH_X)
-                    .addSort("sources.lastVisit", SortOrder.ASC)
                     .addStoredField("_id")
                     .setFetchSource(false) //TODO: this can may be removed.
                     .setQuery(qb);
