@@ -13,6 +13,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.InnerHitBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -164,35 +165,44 @@ public class WebSiteFactory {
     Note that nested filtering is required in order to sort for the lowest visited source date.
 
     GET /newsriver-website/_search/
-    {
+        {
         "query": {
-            "nested" : {
-                "path" : "sources",
-                "score_mode" : "min",
-                "query": {
-            "range" : {
-                "sources.lastVisit" : {
-                    "lte": "now"
+
+            "bool": {
+                "must": {
+                    "term": {
+                        "satus": "active"
+                    }
+                },
+                "must": {
+                    "nested": {
+                        "path": "sources",
+                        "score_mode": "min",
+                        "query": {
+                            "range": {
+                                "sources.lastVisit": {
+                                    "lte": "now"
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        }
             }
         },
 
         "sort": {
-        "sources.lastVisit": {
-          "order": "asc",
-            "nested_path": "sources",
-            "nested_filter": {
-              "range" : {
-                "sources.lastVisit" : {
-                    "lte": "now"
+            "sources.lastVisit": {
+                "order": "asc",
+                "nested_path": "sources",
+                "nested_filter": {
+                    "range": {
+                        "sources.lastVisit": {
+                            "lte": "now"
+                        }
+                    }
                 }
             }
-            }
-          }
         }
-      }
     }
      */
     public HashMap<String, BaseSource> nextWebsiteSourcesToVisits(String query) {
@@ -202,14 +212,17 @@ public class WebSiteFactory {
         HashMap<String, BaseSource> selectedSources = new HashMap<>();
         try {
 
-            QueryBuilder qb = null;
+
             NestedQueryBuilder qnt = QueryBuilders.nestedQuery("sources", QueryBuilders.rangeQuery("sources.lastVisit").lt(new Date().getTime() - GRACETIME_MILLISECONDS), ScoreMode.Min);
             qnt.innerHit(new InnerHitBuilder().setName("source"));
-            if (query == null) {
-                qb = qnt;
-            } else {
-                qb = QueryBuilders.boolQuery().must(QueryBuilders.queryStringQuery(query)).must(qnt);
+
+            BoolQueryBuilder qb = null;
+            qb = QueryBuilders.boolQuery().must(QueryBuilders.termQuery("status", "active")).must(qnt);
+
+            if (query != null) {
+                qb.must(QueryBuilders.queryStringQuery(query));
             }
+
 
             FieldSortBuilder sort = SortBuilders.fieldSort("sources.lastVisit")
                     .setNestedPath("sources")
