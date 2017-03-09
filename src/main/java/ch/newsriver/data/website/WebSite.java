@@ -15,6 +15,10 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WebSite {
 
+    @JsonView(JSONViews.API.class)
+    Status status = Status.ACTIVE;
+
+    ;
     @JsonView(JSONViews.Public.class)
     String name;
     @JsonView(JSONViews.Public.class)
@@ -51,7 +55,6 @@ public class WebSite {
     boolean ajaxBased = false;
     @JsonView(JSONViews.API.class)
     List<BaseSource> sources = new LinkedList<>();
-
 
     public String getName() {
         return name;
@@ -196,6 +199,16 @@ public class WebSite {
     public void setSources(List<BaseSource> sources) {
         this.sources = sources;
     }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public enum Status {ACTIVE, DISALLOWED, IGNORED}
 
     public static class JSONViews {
 
