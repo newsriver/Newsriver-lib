@@ -9,12 +9,13 @@ import java.util.HashMap;
  */
 
 
-
 public class User {
 
+    private Role role;
+    ;
     private String name;
     private String email;
-    private HashMap<Long,RiverBase> rivers = new HashMap<Long,RiverBase>();
+    private HashMap<Long, RiverBase> rivers = new HashMap<Long, RiverBase>();
 
     public String getName() {
         return name;
@@ -39,4 +40,14 @@ public class User {
     public void setRivers(HashMap<Long, RiverBase> rivers) {
         this.rivers = rivers;
     }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public enum Role {USER, ADMIN}
 }
