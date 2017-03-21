@@ -1,8 +1,15 @@
 package ch.newsriver.data.website.source;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * Created by eliapalme on 27/05/16.
  */
+
+//TODO: remove this once we discontinued sources and integrated them into the website
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class URLSeedSource extends BaseSource {
 
     //Is this a root seed URL or temporary used to traverse the website.
@@ -12,6 +19,11 @@ public class URLSeedSource extends BaseSource {
     private int depth;
 
     private String referralURL;
+    private String countryName;
+    private String countryCode;
+    private String region;
+    private String languageCode;
+    private String category;
 
 
     public boolean isPermanent() {
@@ -36,5 +48,45 @@ public class URLSeedSource extends BaseSource {
 
     public void setReferralURL(String referralURL) {
         this.referralURL = referralURL;
+    }
+
+    public String getCountryName() {
+        return countryName;
+    }
+
+    public void setCountryName(String countryName) {
+        this.countryName = countryName;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getLanguageCode() {
+        return languageCode;
+    }
+
+    public void setLanguageCode(String languageCode) {
+        this.languageCode = languageCode;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }
