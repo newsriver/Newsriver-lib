@@ -24,6 +24,7 @@ public class URLSeedSource extends BaseSource {
     private String region;
     private String languageCode;
     private String category;
+    private String expectedPath;
 
 
     public boolean isPermanent() {
@@ -88,5 +89,13 @@ public class URLSeedSource extends BaseSource {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getExpectedPath() {
+        return expectedPath;
+    }
+
+    public void setExpectedPath(String expectedPath) {
+        this.expectedPath = expectedPath;
     }
 }

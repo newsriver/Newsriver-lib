@@ -17,6 +17,7 @@ public class SeedURL extends BaseURL {
     private String region;
     private String languageCode;
     private String category;
+    private String expectedPath;
 
     public int getDepth() {
         return depth;
@@ -64,5 +65,13 @@ public class SeedURL extends BaseURL {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getExpectedPath() {
+        return expectedPath;
+    }
+
+    public void setExpectedPath(String expectedPath) {
+        this.expectedPath = expectedPath;
     }
 }
