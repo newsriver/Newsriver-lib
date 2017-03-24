@@ -1,7 +1,6 @@
 package ch.newsriver.data.website.source;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Created by eliapalme on 27/05/16.
@@ -9,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 //TODO: remove this once we discontinued sources and integrated them into the website
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class URLSeedSource extends BaseSource {
 
     //Is this a root seed URL or temporary used to traverse the website.
@@ -18,7 +16,6 @@ public class URLSeedSource extends BaseSource {
     //distance from the root seed URL
     private int depth;
 
-    private String referralURL;
     private String countryName;
     private String countryCode;
     private String region;
@@ -41,14 +38,6 @@ public class URLSeedSource extends BaseSource {
 
     public void setDepth(int depth) {
         this.depth = depth;
-    }
-
-    public String getReferralURL() {
-        return referralURL;
-    }
-
-    public void setReferralURL(String referralURL) {
-        this.referralURL = referralURL;
     }
 
     public String getCountryName() {

@@ -137,6 +137,8 @@ public class WebSiteFactory {
 
     public boolean updateWebsite(WebSite webSite) {
 
+        initializeSources(webSite);
+
         Client client = ElasticsearchUtil.getInstance().getClient();
         try {
 
@@ -157,6 +159,19 @@ public class WebSiteFactory {
     public HashMap<String, BaseSource> nextWebsiteSourcesToVisits() {
         // example with query return nextWebsiteSourcesToVisits("\"corriere del ticino\"");
         return nextWebsiteSourcesToVisits(null);
+    }
+
+
+    private void initializeSources(WebSite webSite) {
+
+        for (BaseSource source : webSite.getSources()) {
+            if (source.getLastVisit() == null) {
+                source.setLastVisit(dateFormatter.format(new Date()));
+            }
+            if (source.getHttpStatus() == null) {
+                source.setHttpStatus("200");
+            }
+        }
     }
 
 
