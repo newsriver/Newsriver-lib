@@ -8,6 +8,7 @@ public class Category extends MetaData {
     private String country;
     private String region;
     private String category;
+    private String countryCode;
 
     public String getCountry() {
         return country;
@@ -31,5 +32,13 @@ public class Category extends MetaData {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
     }
 }
