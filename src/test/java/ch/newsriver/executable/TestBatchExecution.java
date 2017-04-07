@@ -48,7 +48,7 @@ public class TestBatchExecution {
         //we need to schedule numberOfThreads + poolSize to make sure the queue is full so the next time we call waitFreeBatchExecutors
         //it will wait till numberOfThreads have finished to execute, this will also ensure the semaphore as numberOfThreads releases.
 
-        for (int i = 0; i < numberRuns * +poolSize; i++) {
+        for (int i = 0; i < numberRuns * poolSize; i++) {
             final int j = i;
             CompletableFuture<String> feature = new CompletableFuture();
             feature = feature.supplyAsync(() -> {
@@ -64,7 +64,8 @@ public class TestBatchExecution {
             }, pool);
         }
         pool.waitFreeBatchExecutors(numberRuns);
-        assertTrue(semaphore.tryAcquire(numberRuns, 1000, TimeUnit.MILLISECONDS));
+        //1000 - poolSize because the queue may be empty but the last poolSize thread may still running
+        assertTrue(semaphore.tryAcquire(numberRuns, 1000-poolSize, TimeUnit.MILLISECONDS));
 
     }
 
