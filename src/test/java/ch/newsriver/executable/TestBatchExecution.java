@@ -37,19 +37,19 @@ public class TestBatchExecution {
 
         int sleep = 100;
         int sleepMargin = 10;
-        int numberRuns = 10;
-        int poolSize = 5;
-        TestBatchInterruptibleWithinExecutorPool pool = new TestBatchInterruptibleWithinExecutorPool(poolSize, numberRuns, Duration.ofMillis(sleep));
+        int queue = 10;
+        int poolSize = 2;
+        int overQueue = 10;
+        TestBatchInterruptibleWithinExecutorPool pool = new TestBatchInterruptibleWithinExecutorPool(poolSize, queue, Duration.ofMillis(sleep));
 
 
         Semaphore semaphore = new Semaphore(0);
-        pool.waitFreeBatchExecutors(numberRuns);
+        pool.waitFreeBatchExecutors(queue);
 
         //we need to schedule numberOfThreads + poolSize to make sure the queue is full so the next time we call waitFreeBatchExecutors
         //it will wait till numberOfThreads have finished to execute, this will also ensure the semaphore as numberOfThreads releases.
 
-        for (int i = 0; i < numberRuns * poolSize; i++) {
-            final int j = i;
+        for (int i = 0; i < queue + overQueue; i++) {
             CompletableFuture<String> feature = new CompletableFuture();
             feature = feature.supplyAsync(() -> {
                 try {
@@ -57,15 +57,15 @@ public class TestBatchExecution {
                 } catch (InterruptedException e) {
                     assertNull(e);
                 }
-                if (j < numberRuns) {
-                    semaphore.release();
-                }
+                semaphore.release();
                 return "ok";
             }, pool);
         }
-        pool.waitFreeBatchExecutors(numberRuns);
-        //1000 - poolSize because the queue may be empty but the last poolSize thread may still running
-        assertTrue(semaphore.tryAcquire(numberRuns, 1000-poolSize, TimeUnit.MILLISECONDS));
+        //Now we aim to queue another job but since the queue is supposed to be full it will block
+        pool.waitFreeBatchExecutors(1);
+        //Once the overQueue threads have been consumed the waitFreeBatchExecutors will unlock and we will be able to acquite the semaphore
+        //minus poolSize because the queue is unlocked but the threads still need to run
+        assertTrue(semaphore.tryAcquire(overQueue-poolSize));
 
     }
 
