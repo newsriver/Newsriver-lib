@@ -1,18 +1,17 @@
 package ch.newsriver.data.url;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Created by eliapalme on 31/05/16.
  */
 //TODO: remove this once we discontinued sources and integrated them into the website
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class LinkURL extends BaseURL{
+public class LinkURL extends BaseURL {
 
 
     private String country;
+    private String countryCode;
     private String region;
     private String category;
 
@@ -39,5 +38,13 @@ public class LinkURL extends BaseURL{
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
     }
 }

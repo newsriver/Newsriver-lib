@@ -1,14 +1,12 @@
 package ch.newsriver.data.url;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Created by eliapalme on 27/05/16.
  */
 //TODO: remove this once we discontinued sources and integrated them into the website
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SeedURL extends BaseURL {
 
     private int depth;
@@ -17,6 +15,7 @@ public class SeedURL extends BaseURL {
     private String region;
     private String languageCode;
     private String category;
+    private String expectedPath;
 
     public int getDepth() {
         return depth;
@@ -64,5 +63,13 @@ public class SeedURL extends BaseURL {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getExpectedPath() {
+        return expectedPath;
+    }
+
+    public void setExpectedPath(String expectedPath) {
+        this.expectedPath = expectedPath;
     }
 }

@@ -10,6 +10,7 @@ public class FeedURL extends BaseURL {
     private String publicationDate;
     private String headlines;
     private String country;
+    private String countryCode;
     private String region;
     private String category;
 
@@ -59,5 +60,13 @@ public class FeedURL extends BaseURL {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
     }
 }
