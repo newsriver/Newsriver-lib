@@ -8,6 +8,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,6 +24,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +42,9 @@ public abstract class Main {
 
     private static final Logger logger = LogManager.getLogger(Main.class);
     private static final SimpleDateFormat fmt = new SimpleDateFormat("'Current time: ' yyyy-MM-dd HH:mm:ssZ");
-    protected static HashMap<String, SortedMap<Long, Long>> metrics = new HashMap<String, SortedMap<Long, Long>>();
+    protected static HashMap<Metric, SortedMap<Long, Long>> metrics = new HashMap<Metric, SortedMap<Long, Long>>();
+    protected static HashMap<Metric, Check> checks = new HashMap<Metric, Check>();
+
     static Console webConsole;
     private static Main instance;
     private CommandLine cmd = null;
@@ -195,19 +200,43 @@ public abstract class Main {
         return result.toString();
     }
 
+
     public static synchronized void addMetric(String metricName, int count) {
+        addMetric(metricName, count, ChronoUnit.SECONDS);
+    }
 
-        long second = Duration.ofNanos(System.nanoTime()).getSeconds();
+    public static synchronized void addMetric(String metricName, int count, ChronoUnit timeUnit) {
 
-        SortedMap<Long, Long> units = metrics.get(metricName);
+        Metric metric = new Metric(metricName, timeUnit);
+        long unit = 0;
+        if (timeUnit == ChronoUnit.SECONDS) {
+            unit = Duration.ofNanos(System.nanoTime()).getSeconds();
+        } else if (timeUnit == ChronoUnit.MINUTES) {
+            unit = Duration.ofNanos(System.nanoTime()).toMinutes();
+        }
+
+
+        SortedMap<Long, Long> units = metrics.get(metric);
         if (units == null) {
             units = new TreeMap<Long, Long>();
         }
 
-        units.put(second, units.getOrDefault(second, 0l) + count);
-        metrics.put(metricName, units.tailMap(second - 60));
+        units.put(unit, units.getOrDefault(unit, 0l) + count);
+        metrics.put(metric, units.tailMap(unit - 60));
 
 
+    }
+
+    public static synchronized void addCheck(String metricName, ChronoUnit timeUnit, int expcted, long toCompare) {
+        Check check = new Check();
+        check.setExpected(expcted);
+        check.setToComapre(toCompare);
+        Metric metric = new Metric(metricName, timeUnit);
+        checks.put(metric, check);
+    }
+
+    public static HashMap<Metric, Check> getChecks() {
+        return checks;
     }
 
     public abstract void shutdown();
@@ -225,7 +254,6 @@ public abstract class Main {
     protected int getPort() {
         return this.port;
     }
-
 
     public CommandLine getCmd() {
         return this.cmd;
@@ -271,6 +299,77 @@ public abstract class Main {
             logger.fatal("Unable to retreive instanceId", e);
         }
 
+    }
+
+
+    public static class Check {
+        private int expected;
+        private Long toComapre;
+
+        public int getExpected() {
+            return expected;
+        }
+
+        public void setExpected(int expected) {
+            this.expected = expected;
+        }
+
+        public Long getToComapre() {
+            return toComapre;
+        }
+
+        public void setToComapre(Long toComapre) {
+            this.toComapre = toComapre;
+        }
+    }
+
+
+    public static class Metric {
+
+        private String name;
+        private ChronoUnit unit;
+
+        public Metric(String name, ChronoUnit unit) {
+            this.name = name;
+            this.unit = unit;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public ChronoUnit getUnit() {
+            return unit;
+        }
+
+        public void setUnit(ChronoUnit unit) {
+            this.unit = unit;
+        }
+
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder(17, 31).
+                    append(name).
+                    append(unit).
+                    toHashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Metric) {
+                final Metric other = (Metric) obj;
+                return new EqualsBuilder()
+                        .append(name, other.name)
+                        .append(unit, other.unit)
+                        .isEquals();
+            } else {
+                return false;
+            }
+        }
     }
 
 }
