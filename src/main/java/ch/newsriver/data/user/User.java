@@ -12,7 +12,8 @@ import java.util.HashMap;
 public class User {
 
     private Role role;
-    ;
+    private Limit limit;
+    private Subscription subscription;
     private String name;
     private String email;
     private HashMap<Long, RiverBase> rivers = new HashMap<Long, RiverBase>();
@@ -49,5 +50,25 @@ public class User {
         this.role = role;
     }
 
+    public Limit getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Limit limit) {
+        this.limit = limit;
+    }
+
+    public Subscription getSubscription() {
+        return subscription;
+    }
+
+    public void setSubscription(Subscription subscription) {
+        this.subscription = subscription;
+    }
+
     public enum Role {USER, ADMIN}
+
+    public enum Limit {OK, WARNING, EXCEEDED}
+
+    public enum Subscription {FREE, BUSINESS}
 }
