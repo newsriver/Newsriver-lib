@@ -59,13 +59,15 @@ public class UserFactory {
         // String sql = "SELECT U.id,U.name,U.email,U.role,R.id,R.value FROM user AS U LEFT JOIN riverSetting as R ON R.userId=U.id WHERE U.id = ?";
 
         String sql = "SELECT U.id,U.name,U.email,U.role,U.limit,U.subscription FROM user AS U WHERE U.id = ?";
-        User user = new User();
+        User user = null;
         try (Connection conn = JDBCPoolUtil.getInstance().getConnection(JDBCPoolUtil.DATABASES.Sources); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, userId);
             try (ResultSet resultSet = stmt.executeQuery()) {
 
                 if (resultSet.next()) {
+                    user = new User();
+                    user.setId(resultSet.getLong("U.id"));
                     user.setEmail(resultSet.getString("U.email"));
                     user.setName(resultSet.getString("U.name"));
                     user.setRole(User.Role.valueOf(resultSet.getString("U.role")));

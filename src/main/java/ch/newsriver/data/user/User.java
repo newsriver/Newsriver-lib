@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 public class User {
 
+    private long id;
     private Role role;
     private Limit limit;
     private Subscription subscription;
@@ -64,6 +65,14 @@ public class User {
 
     public void setSubscription(Subscription subscription) {
         this.subscription = subscription;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public enum Role {USER, ADMIN}

@@ -1,6 +1,8 @@
 package ch.newsriver.data.user.token;
 
 import ch.newsriver.dao.JDBCPoolUtil;
+import ch.newsriver.data.user.User;
+import ch.newsriver.data.user.UserFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.binary.Base64;
@@ -110,7 +112,25 @@ public class TokenFactory {
         return null;
     }
 
-    ;
+    public User getTokenUser(String tokenStr) throws TokenVerificationException {
+
+        if (tokenStr == null) {
+            throw new TokenVerificationException("Authorization token missing");
+        }
+
+        TokenFactory tokenFactory = new TokenFactory();
+        TokenBase token = tokenFactory.verifyToken(tokenStr);
+
+        if (token == null) {
+            throw new TokenVerificationException("Invalid token");
+        }
+
+        User user = UserFactory.getInstance().getUser(token.getUserId());
+        if (user == null) {
+            throw new TokenVerificationException("Invalid user");
+        }
+        return user;
+    }
 
 
     protected String encrypt(String string) {
@@ -188,6 +208,12 @@ public class TokenFactory {
 
         }
 
+    }
+
+    public static class TokenVerificationException extends Exception {
+        public TokenVerificationException(String message) {
+            super(message);
+        }
     }
 
 }
