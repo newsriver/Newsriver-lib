@@ -112,7 +112,7 @@ public class TokenFactory {
         return null;
     }
 
-    public User getTokenUser(String tokenStr) throws TokenVerificationException {
+    public User getTokenUser(String tokenStr) throws TokenVerificationException, UserFactory.UserNotFountException {
 
         if (tokenStr == null) {
             throw new TokenVerificationException("Authorization token missing");
@@ -124,12 +124,8 @@ public class TokenFactory {
         if (token == null) {
             throw new TokenVerificationException("Invalid token");
         }
-
-        User user = UserFactory.getInstance().getUser(token.getUserId());
-        if (user == null) {
-            throw new TokenVerificationException("Invalid user");
-        }
-        return user;
+        
+        return UserFactory.getInstance().getUser(token.getUserId());
     }
 
 

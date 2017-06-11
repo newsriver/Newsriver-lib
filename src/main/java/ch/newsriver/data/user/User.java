@@ -13,7 +13,7 @@ public class User {
 
     private long id;
     private Role role;
-    private Limit limit;
+    private Usage usage;
     private Subscription subscription;
     private String name;
     private String email;
@@ -51,12 +51,12 @@ public class User {
         this.role = role;
     }
 
-    public Limit getLimit() {
-        return limit;
+    public Usage getUsage() {
+        return usage;
     }
 
-    public void setLimit(Limit limit) {
-        this.limit = limit;
+    public void setUsage(Usage usage) {
+        this.usage = usage;
     }
 
     public Subscription getSubscription() {
@@ -77,7 +77,7 @@ public class User {
 
     public enum Role {USER, ADMIN}
 
-    public enum Limit {OK, WARNING, EXCEEDED}
+    public enum Usage {OK, WARNING, EXCEEDED}
 
     public enum Subscription {FREE, BUSINESS}
 }
