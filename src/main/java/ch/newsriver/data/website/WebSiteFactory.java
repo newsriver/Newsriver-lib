@@ -101,16 +101,23 @@ public class WebSiteFactory {
     }
 
     public List<WebSite> searchWebsitesWithQuery(String query) {
-        return searchWebsitesWithQuery(query, -1);
+        return searchWebsitesWithQuery(query, null, -1);
     }
 
-    public List<WebSite> searchWebsitesWithQuery(String query, int limit) {
+    public List<WebSite> searchWebsitesWithQuery(String query, String field, int limit) {
         Client client;
         client = ElasticsearchUtil.getInstance().getClient();
         LinkedList<WebSite> websites = new LinkedList<>();
 
         try {
-            QueryBuilder qb = QueryBuilders.queryStringQuery(query);
+            QueryBuilder qb;
+
+            //I don't like this, ideally we should have a queryString that is equivalent to a searchPrasePrefix
+            if (field == null) {
+                qb = QueryBuilders.queryStringQuery(query);
+            } else {
+                qb = QueryBuilders.matchPhrasePrefixQuery(field, query);
+            }
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
                     .setIndices("newsriver-website")
