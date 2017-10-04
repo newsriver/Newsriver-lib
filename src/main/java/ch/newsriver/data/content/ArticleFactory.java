@@ -5,7 +5,6 @@ import ch.newsriver.data.website.WebSite;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -73,7 +72,7 @@ public class ArticleFactory {
             HighlightBuilder hilight = new HighlightBuilder().field("title").field("text").preTags("<highlighted>").postTags("</highlighted>").numOfFragments(1).requireFieldMatch(true);
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
-                    .setIndices("newsriver")
+                    .setIndices("newsriver*")
                     .setTypes("article")
                     .highlighter(hilight)
                     .setSize(searchRequest.getLimit())
@@ -102,6 +101,7 @@ public class ArticleFactory {
                     HighlightedArticle article = mapper.readValue(hit.getSourceAsString(), HighlightedArticle.class);
                     article.setId(hit.getId());
                     article.setScore(hit.getScore());
+                    article.setIndexName(hit.getIndex());
 
                     for (HighlightField filed : hit.getHighlightFields().values()) {
 
@@ -134,14 +134,14 @@ public class ArticleFactory {
     public IndexResponse saveArticle(Article article, String urlHash) {
         Client client = null;
         client = ElasticsearchUtil.getInstance().getClient();
-        return this.saveArticle(article, urlHash, client);
+        return this.saveArticle(article, urlHash, "newsriver", client);
     }
 
-    public IndexResponse saveArticle(Article article, String urlHash, Client client) {
+    public IndexResponse saveArticle(Article article, String urlHash, String index, Client client) {
 
         try {
 
-            IndexRequest indexRequest = new IndexRequest("newsriver", "article", urlHash);
+            IndexRequest indexRequest = new IndexRequest(index, "article", urlHash);
 
             indexRequest.source(mapper.writeValueAsString(article));
             return client.index(indexRequest).actionGet();
@@ -158,7 +158,7 @@ public class ArticleFactory {
         Client client = ElasticsearchUtil.getInstance().getClient();
         try {
 
-            IndexRequest indexRequest = new IndexRequest("newsriver", "article", article.getId());
+            IndexRequest indexRequest = new IndexRequest(article.getIndexName(), "article", article.getId());
             indexRequest.source(mapper.writeValueAsString(article));
             return client.index(indexRequest).actionGet().getId() != null;
 
@@ -173,18 +173,15 @@ public class ArticleFactory {
     }
 
     public Article getArticle(String id) {
-
         Client client = ElasticsearchUtil.getInstance().getClient();
-
-
         try {
-
-            GetResponse response = client.prepareGet("newsriver", "article", id).execute().actionGet();
-            if (response.isExists()) {
-                Article article = mapper.readValue(response.getSourceAsString(), Article.class);
+            SearchResponse response = client.prepareSearch().setIndices("newsriver*").setTypes("article").setQuery(QueryBuilders.termQuery("_id", id)).execute().actionGet();
+            for (SearchHit hit : response.getHits()) {
+                Article article = mapper.readValue(hit.getSourceAsString(), Article.class);
+                article.setIndexName(hit.getIndex());
                 return article;
-            }
 
+            }
         } catch (IOException e) {
             logger.fatal("Unable to deserialize article", e);
             return null;

@@ -45,6 +45,9 @@ public class Article {
     @JsonView(JSONViews.Public.class)
     HashMap<String, MetaData> metadata = new HashMap<>();
 
+    @JsonView(JSONViews.Volatile.class)
+    String indexName;
+
     public String getPublishDate() {
         return publishDate;
     }
@@ -145,6 +148,14 @@ public class Article {
         this.structuredText = structuredText;
     }
 
+    public String getIndexName() {
+        return indexName;
+    }
+
+    public void setIndexName(String indexName) {
+        this.indexName = indexName;
+    }
+
     static public class JSONViews {
         static public interface Public {
         }
@@ -153,6 +164,9 @@ public class Article {
         }
 
         static public interface Internal extends API {
+        }
+
+        static public interface Volatile extends Internal {
         }
     }
 }
