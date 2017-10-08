@@ -5,7 +5,10 @@ import ch.newsriver.data.website.WebSite;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.get.MultiGetItemResponse;
+import org.elasticsearch.action.get.MultiGetRequestBuilder;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -43,6 +46,8 @@ public class ArticleFactory {
         mapper.setConfig(mapper.getSerializationConfig().withView(ElasticSearchJSONView.class));
     }
 
+    //TODO: one day when the old monolitic index Newsriver will nolonger exsit change the following wildcard to newsriver-data-*
+    final GetIndexRequest getNewsriverIndexRequest = new GetIndexRequest().indices("newsriver*").features(GetIndexRequest.Feature.ALIASES);
 
     private ArticleFactory() {
 
@@ -73,7 +78,7 @@ public class ArticleFactory {
             HighlightBuilder hilight = new HighlightBuilder().field("title").field("text").preTags("<highlighted>").postTags("</highlighted>").numOfFragments(1).requireFieldMatch(true);
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
-                    .setIndices("newsriver")
+                    .setIndices("newsriver*")
                     .setTypes("article")
                     .highlighter(hilight)
                     .setSize(searchRequest.getLimit())
@@ -102,6 +107,7 @@ public class ArticleFactory {
                     HighlightedArticle article = mapper.readValue(hit.getSourceAsString(), HighlightedArticle.class);
                     article.setId(hit.getId());
                     article.setScore(hit.getScore());
+                    article.setIndexName(hit.getIndex());
 
                     for (HighlightField filed : hit.getHighlightFields().values()) {
 
@@ -131,38 +137,34 @@ public class ArticleFactory {
         return articles;
     }
 
-    public IndexResponse saveArticle(Article article, String urlHash) {
+    public IndexResponse saveArticle(Article article, String urlHash, String index) {
         Client client = null;
         client = ElasticsearchUtil.getInstance().getClient();
-        return this.saveArticle(article, urlHash, client);
+        return this.saveArticle(article, urlHash, index, client);
     }
 
-    public IndexResponse saveArticle(Article article, String urlHash, Client client) {
-
+    public IndexResponse saveArticle(Article article, String urlHash, String index, Client client) {
         try {
-
-            IndexRequest indexRequest = new IndexRequest("newsriver", "article", urlHash);
-
+            IndexRequest indexRequest = new IndexRequest(index, "article", urlHash);
             indexRequest.source(mapper.writeValueAsString(article));
             return client.index(indexRequest).actionGet();
-
         } catch (Exception e) {
             logger.error("Unable to save article in elasticsearch", e);
             return null;
         }
     }
 
-
     public boolean updateArticle(Article article) {
-
+        String index = article.getIndexName();
         Client client = ElasticsearchUtil.getInstance().getClient();
         try {
-
-            IndexRequest indexRequest = new IndexRequest("newsriver", "article", article.getId());
+            if (index == null) {
+                logger.warn("Updating article that has no indexName set.");
+                index = this.getArticle(article.getId()).getIndexName();
+            }
+            IndexRequest indexRequest = new IndexRequest(index, "article", article.getId());
             indexRequest.source(mapper.writeValueAsString(article));
             return client.index(indexRequest).actionGet().getId() != null;
-
-
         } catch (IOException e) {
             logger.fatal("Unable to serialize article", e);
             return false;
@@ -172,25 +174,33 @@ public class ArticleFactory {
         }
     }
 
-    public Article getArticle(String id) {
-
+    public Article getArticle(String id) throws Exception {
         Client client = ElasticsearchUtil.getInstance().getClient();
+        return getArticle(id, client);
+    }
+
+    public Article getArticle(String id, Client client) throws Exception {
 
 
         try {
-
-            GetResponse response = client.prepareGet("newsriver", "article", id).execute().actionGet();
-            if (response.isExists()) {
-                Article article = mapper.readValue(response.getSourceAsString(), Article.class);
-                return article;
+            MultiGetRequestBuilder articleRequest = client.prepareMultiGet();
+            for (String indexName : client.admin().indices().getIndex(getNewsriverIndexRequest).actionGet().getIndices()) {
+                articleRequest = articleRequest.add(indexName, "article", id);
             }
-
+            MultiGetResponse responses = articleRequest.execute().actionGet();
+            for (MultiGetItemResponse response : responses.getResponses()) {
+                //// TODO: 06.10.17 Consider checking it the article has been found in multiple indexes and throw an error if so 
+                if (response.getResponse().isExists()) {
+                    Article article = mapper.readValue(response.getResponse().getSourceAsString(), Article.class);
+                    return article;
+                }
+            }
         } catch (IOException e) {
             logger.fatal("Unable to deserialize article", e);
-            return null;
+            throw e;
         } catch (Exception e) {
             logger.error("Unable to get article from elasticsearch", e);
-            return null;
+            throw e;
         }
         return null;
     }
