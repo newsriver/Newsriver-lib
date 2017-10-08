@@ -44,7 +44,6 @@ public class Article {
     List<BaseURL> referrals = new LinkedList<>();
     @JsonView(JSONViews.Public.class)
     HashMap<String, MetaData> metadata = new HashMap<>();
-
     @JsonView(JSONViews.Volatile.class)
     String indexName;
 
