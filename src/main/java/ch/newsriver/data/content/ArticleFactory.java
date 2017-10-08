@@ -192,6 +192,7 @@ public class ArticleFactory {
                 //// TODO: 06.10.17 Consider checking it the article has been found in multiple indexes and throw an error if so 
                 if (response.getResponse().isExists()) {
                     Article article = mapper.readValue(response.getResponse().getSourceAsString(), Article.class);
+                    article.setIndexName(response.getResponse().getIndex());
                     return article;
                 }
             }
