@@ -18,6 +18,7 @@ import org.elasticsearch.index.query.InnerHitBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
@@ -100,11 +101,16 @@ public class WebSiteFactory {
         return searchWebsitesWithQuery("domainName:\"" + domain + "\"");
     }
 
-    public List<WebSite> searchWebsitesWithQuery(String query) {
-        return searchWebsitesWithQuery(query, null, -1);
+    public List<WebSite> searchWebsitesWithName(String name) {
+
+        return searchWebsitesWithQuery(name, 20, "domainName", "hostName", "name");
     }
 
-    public List<WebSite> searchWebsitesWithQuery(String query, String field, int limit) {
+    public List<WebSite> searchWebsitesWithQuery(String query) {
+        return searchWebsitesWithQuery(query, -1, null);
+    }
+
+    public List<WebSite> searchWebsitesWithQuery(String query, int limit, String... fields) {
         Client client;
         client = ElasticsearchUtil.getInstance().getClient();
         LinkedList<WebSite> websites = new LinkedList<>();
@@ -113,10 +119,10 @@ public class WebSiteFactory {
             QueryBuilder qb;
 
             //I don't like this, ideally we should have a queryString that is equivalent to a searchPrasePrefix
-            if (field == null) {
+            if (fields == null) {
                 qb = QueryBuilders.queryStringQuery(query);
             } else {
-                qb = QueryBuilders.matchPhrasePrefixQuery(field, query);
+                qb = QueryBuilders.multiMatchQuery(query, fields).type(MatchQuery.Type.PHRASE_PREFIX);
             }
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
