@@ -52,7 +52,7 @@ public class Console extends NanoHTTPD {
                 totalCount += units.getOrDefault(now - i, 0l);
             }
 
-            body.append("<tr><td>" + metric + "</td><td>" + totalCount / mesurments + unit + "</td></tr>");
+            body.append("<tr><td>" + metric.getName() + "</td><td>" + totalCount / mesurments + unit + "</td></tr>");
         }
 
         body.append("</table>");
