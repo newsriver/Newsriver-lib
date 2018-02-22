@@ -132,7 +132,9 @@ public class SourceFactory {
                     String sourceId = candidate.pollFirst();
 
                     if (!setVisited(sourceId)) {
-                        logger.warn("Conflict found, the source was recently visited id:" + sourceId);
+                        //This excpetion is used to transmit a payload to logstash
+                        Exception e = new Exception("source id:" + sourceId);
+                        logger.warn("Conflict found, the source was recently visited", e);
                         continue;
                     }
                     sources.add(sourceId);
