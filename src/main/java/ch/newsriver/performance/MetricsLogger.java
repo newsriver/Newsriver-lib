@@ -1,7 +1,6 @@
 package ch.newsriver.performance;
 
 import ch.newsriver.data.url.BaseURL;
-import ch.newsriver.executable.Main;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,7 +8,11 @@ import org.apache.logging.log4j.Logger;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -46,18 +49,26 @@ public class MetricsLogger {
         openSocket();
     }
 
-    public static MetricsLogger getLogger(Class loggerClass,String instanceName){
-        return new MetricsLogger(loggerClass,instanceName);
+    public static MetricsLogger getLogger(Class loggerClass, String instanceName) {
+        return new MetricsLogger(loggerClass, instanceName);
     }
 
+    public void logMetric(String name) {
+        logMetric(name, null, null, 1);
+    }
 
     public void logMetric(String name, BaseURL info) {
-        logMetric(name, info,1);
+        logMetric(name, info, null, 1);
     }
 
-    private void logMetric(String name, BaseURL info, int count) {
+    public void logMetric(String name, BaseURL info, Map<String, String> metadata) {
+        logMetric(name, info, metadata, 1);
+    }
+
+
+    private void logMetric(String name, BaseURL info, Map<String, String> metadata, int count) {
         try {
-            Metric metric = new Metric(name,info, className, instance, count);
+            Metric metric = new Metric(name, info, metadata, className, instance, count);
             byte[] message = mapper.writeValueAsString(metric).getBytes("utf-8");
             DatagramPacket out = new DatagramPacket(message, message.length, hostAddress, port);
 
@@ -65,7 +76,6 @@ public class MetricsLogger {
         } catch (IOException e) {
         }
     }
-
 
 
     private void openSocket() {
