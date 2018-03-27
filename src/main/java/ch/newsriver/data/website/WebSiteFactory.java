@@ -7,8 +7,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.action.DocWriteRequest;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -36,6 +39,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 /**
  * Created by eliapalme on 03/04/16.
@@ -72,6 +77,33 @@ public class WebSiteFactory {
         return instance;
     }
 
+
+    public String addWebsite(WebSite webSite ) {
+
+        Client client = ElasticsearchUtil.getInstance().getClient();
+        try {
+
+            IndexResponse response = client.prepareIndex("newsriver-website", "website", webSite.getHostName().toLowerCase().trim())
+                    .setSource(mapper.writeValueAsString(webSite))
+                    .setOpType(DocWriteRequest.OpType.CREATE)
+                    .get();
+
+            if(response.getResult() != DocWriteResponse.Result.CREATED ){
+                return null;
+            }else{
+                return response.getId();
+            }
+
+        } catch (IOException e) {
+            logger.fatal("Unable to serialize website", e);
+            return null;
+        } catch (Exception e) {
+            logger.error("Unable to update website", e);
+            return null;
+        }
+
+    }
+
     public WebSite getWebsite(String host) {
         Client client = null;
         client = ElasticsearchUtil.getInstance().getClient();
@@ -101,16 +133,16 @@ public class WebSiteFactory {
         return searchWebsitesWithQuery("domainName:\"" + domain + "\"");
     }
 
-    public List<WebSite> searchWebsitesWithName(String name) {
+    public List<WebSite> searchWebsitesWithName(String name, Long ownerId) {
 
-        return searchWebsitesWithQuery(name, 20, "domainName", "hostName", "name");
+        return searchWebsitesWithQuery(name,ownerId, 20, "domainName", "hostName", "name");
     }
 
     public List<WebSite> searchWebsitesWithQuery(String query) {
-        return searchWebsitesWithQuery(query, -1, null);
+        return searchWebsitesWithQuery(query,null, -1, null);
     }
 
-    public List<WebSite> searchWebsitesWithQuery(String query, int limit, String... fields) {
+    public List<WebSite> searchWebsitesWithQuery(String query,Long ownerId, int limit, String... fields) {
         Client client;
         client = ElasticsearchUtil.getInstance().getClient();
         LinkedList<WebSite> websites = new LinkedList<>();
@@ -122,13 +154,23 @@ public class WebSiteFactory {
             if (fields == null) {
                 qb = QueryBuilders.queryStringQuery(query);
             } else {
-                qb = QueryBuilders.multiMatchQuery(query, fields).type(MatchQuery.Type.PHRASE_PREFIX);
+                qb = QueryBuilders.multiMatchQuery(query, fields).type(MatchQuery.Type.PHRASE_PREFIX).maxExpansions(200);
+            }
+
+            if(ownerId!=null){
+                //start quering by name if at least one char is provided chars are provided
+                if(query.length() > 0){
+                    qb = QueryBuilders.boolQuery().must(qb).filter(termQuery("ownerId", ownerId));
+                }else{
+                    qb = termQuery("ownerId", ownerId);
+                }
             }
 
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
                     .setIndices("newsriver-website")
                     .setTypes("website")
                     .setQuery(qb);
+
 
             if (limit > 0) {
                 searchRequestBuilder = searchRequestBuilder.setSize(limit);
@@ -245,7 +287,7 @@ public class WebSiteFactory {
             qnt.innerHit(new InnerHitBuilder().setName("source"));
 
             BoolQueryBuilder qb = null;
-            qb = QueryBuilders.boolQuery().must(QueryBuilders.termQuery("status", "active")).must(qnt);
+            qb = QueryBuilders.boolQuery().must(termQuery("status", "active")).must(qnt);
 
             if (query != null) {
                 qb.must(QueryBuilders.queryStringQuery(query));

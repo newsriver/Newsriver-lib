@@ -34,12 +34,18 @@ public class WebSite {
     @JsonView(JSONViews.ArticleNested.class)
     String countryCode;
     @JsonView(JSONViews.API.class)
+    String region;
+    @JsonView(JSONViews.API.class)
     String canonicalURL;
+    @JsonView(JSONViews.API.class)
+    String type;
+    @JsonView(JSONViews.API.class)
+    String category;
     @JsonView(JSONViews.API.class)
     Long rankingCountry;
     @JsonView(JSONViews.Internal.class)
     String lastUpdate;
-    @JsonView(JSONViews.Internal.class)
+    @JsonView(JSONViews.API.class)
     String description;
     @JsonView(JSONViews.Internal.class)
     List<String> alternativeURLs = new LinkedList<>();
@@ -55,6 +61,9 @@ public class WebSite {
     boolean ajaxBased = false;
     @JsonView(JSONViews.API.class)
     List<BaseSource> sources = new LinkedList<>();
+    @JsonView(JSONViews.Internal.class)
+    Long ownerId;
+
 
     public String getName() {
         return name;
@@ -206,6 +215,38 @@ public class WebSite {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
     }
 
     public enum Status {ACTIVE, DISALLOWED, IGNORED}
