@@ -1,9 +1,12 @@
 package ch.newsriver.data.website;
 
 import ch.newsriver.data.website.source.BaseSource;
+import ch.newsriver.util.url.URLUtils;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonView;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -266,4 +269,34 @@ public class WebSite {
         }
 
     }
+
+
+    public void initWebsite(String url) throws URISyntaxException {
+        URI uri = new URI(url);
+        this.setHostName(uri.getHost().toLowerCase());
+        this.setPort(uri.getPort());
+        if (uri.getScheme().toLowerCase().startsWith("https")) {
+            this.setSsl(true);
+        }
+        this.setCanonicalURL(buildCanonicalUrl());
+        this.setDomainName(URLUtils.getDomainRoot(uri.getHost()));
+    }
+
+
+
+    private String buildCanonicalUrl() {
+        StringBuilder url = new StringBuilder();
+        if (this.isSsl()) {
+            url.append("https://");
+        } else {
+            url.append("http://");
+        }
+        url.append(this.getHostName());
+        if (this.getPort() > 0 && ((this.isSsl() && this.getPort() != 443) || (!this.isSsl() && this.getPort() != 80))) {
+            url.append(":");
+            url.append(this.getPort());
+        }
+        return url.toString();
+    }
+
 }
