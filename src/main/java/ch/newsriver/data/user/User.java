@@ -75,7 +75,7 @@ public class User {
         this.id = id;
     }
 
-    public enum Role {USER, ADMIN}
+    public enum Role {USER, SUBSCRIBER, ADMIN}
 
     public enum Usage {OK, WARNING, EXCEEDED}
 
