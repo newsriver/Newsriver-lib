@@ -18,10 +18,7 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WebSite {
 
-    @JsonView(JSONViews.API.class)
-    Status status = Status.ACTIVE;
 
-    ;
     @JsonView(JSONViews.Public.class)
     String name;
     @JsonView(JSONViews.Public.class)
@@ -39,6 +36,8 @@ public class WebSite {
     @JsonView(JSONViews.ArticleNested.class)
     String region;
     @JsonView(JSONViews.API.class)
+    Status status = Status.ACTIVE;
+    @JsonView(JSONViews.API.class)
     String canonicalURL;
     @JsonView(JSONViews.API.class)
     String type;
@@ -46,10 +45,12 @@ public class WebSite {
     String category;
     @JsonView(JSONViews.API.class)
     Long rankingCountry;
-    @JsonView(JSONViews.Internal.class)
-    String lastUpdate;
+    @JsonView(JSONViews.API.class)
+    List<BaseSource> sources = new LinkedList<>();
     @JsonView(JSONViews.API.class)
     String description;
+    @JsonView(JSONViews.Internal.class)
+    String lastUpdate;
     @JsonView(JSONViews.Internal.class)
     List<String> alternativeURLs = new LinkedList<>();
     @JsonView(JSONViews.Internal.class)
@@ -62,8 +63,6 @@ public class WebSite {
     Set<String> languages = new HashSet<>();
     @JsonView(JSONViews.Internal.class)
     boolean ajaxBased = false;
-    @JsonView(JSONViews.API.class)
-    List<BaseSource> sources = new LinkedList<>();
     @JsonView(JSONViews.Internal.class)
     Long ownerId;
 
