@@ -27,8 +27,6 @@ public class WebSite {
     String domainName;
     @JsonView(JSONViews.Public.class)
     String iconURL;
-    @JsonView(JSONViews.Public.class)
-    Long rankingGlobal;
     @JsonView(JSONViews.ArticleNested.class)
     String countryName;
     @JsonView(JSONViews.ArticleNested.class)
@@ -51,6 +49,8 @@ public class WebSite {
     String description;
     @JsonView(JSONViews.Internal.class)
     String lastUpdate;
+    @JsonView(JSONViews.Internal.class)
+    Long rankingGlobal;
     @JsonView(JSONViews.Internal.class)
     List<String> alternativeURLs = new LinkedList<>();
     @JsonView(JSONViews.Internal.class)
