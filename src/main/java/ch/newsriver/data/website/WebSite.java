@@ -33,7 +33,7 @@ public class WebSite {
     String countryName;
     @JsonView(JSONViews.ArticleNested.class)
     String countryCode;
-    @JsonView(JSONViews.API.class)
+    @JsonView(JSONViews.ArticleNested.class)
     String region;
     @JsonView(JSONViews.API.class)
     String canonicalURL;
