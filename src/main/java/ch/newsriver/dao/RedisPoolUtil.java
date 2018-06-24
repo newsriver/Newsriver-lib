@@ -24,6 +24,7 @@ public class RedisPoolUtil {
         VISITED_URLS(1),
         RESOLVED_URLS(2),
         DOWNLOADED_HTMLS(3),
+        API(4),
         ALEXA_CACHE(10);
 
         DATABASES(int code) {

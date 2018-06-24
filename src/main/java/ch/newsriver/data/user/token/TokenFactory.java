@@ -1,6 +1,7 @@
 package ch.newsriver.data.user.token;
 
 import ch.newsriver.dao.JDBCPoolUtil;
+import ch.newsriver.dao.RedisPoolUtil;
 import ch.newsriver.data.user.User;
 import ch.newsriver.data.user.UserFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -11,6 +12,7 @@ import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import redis.clients.jedis.Jedis;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -61,6 +63,18 @@ public class TokenFactory {
             } catch (IOException ex) {
                 log.fatal(ex);
             }
+        }
+    }
+
+
+    public static boolean apiRateLimitExceeded(String token) {
+        try (Jedis jedis = RedisPoolUtil.getInstance().getResource(RedisPoolUtil.DATABASES.API)) {
+            Long counter = (Long) jedis.incr("APIRateLimit:v1:"+token);
+            //if counter was 0 start a new 15min window
+            if(counter<=1){
+                jedis.expire("APIRateLimit:v1:"+token,900);
+            }
+            return counter > 225;
         }
     }
 
