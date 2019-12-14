@@ -10,11 +10,9 @@ repositories {
 }
 
 dependencies {
-
-
     compile 'org.seleniumhq.selenium:selenium-java:2.53.0'
-    compile 'org.elasticsearch:elasticsearch:7.5.0'
-    compile group: 'org.elasticsearch.client', name: 'transport', version: '7.5.0'
+    compile 'org.elasticsearch:elasticsearch:6.8.5'
+    compile group: 'org.elasticsearch.client', name: 'transport', version: '6.8.5'
     compile 'com.ibm.icu:icu4j:56.1'
     compile 'org.apache.kafka:kafka-clients:0.11.0.2'
     compile 'com.zaxxer:HikariCP:2.4.4'
