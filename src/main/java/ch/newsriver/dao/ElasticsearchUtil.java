@@ -8,7 +8,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
@@ -94,17 +94,17 @@ public class ElasticsearchUtil {
 
             if (elasitcserachConfig.getProperty("cluster.hostname") != null) {
                 for (InetAddress addr : InetAddress.getAllByName(elasitcserachConfig.getProperty("cluster.hostname"))) {
-                    client.addTransportAddress(new TransportAddress(addr, Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
+                    client.addTransportAddress(new InetSocketTransportAddress(addr, Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
                 }
             } else {
                 if (elasitcserachConfig.getProperty("cluster.address.1") != null) {
-                    client.addTransportAddress(new TransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.1")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
+                    client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.1")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
                 }
                 if (elasitcserachConfig.getProperty("cluster.address.2") != null) {
-                    client.addTransportAddress(new TransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.2")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
+                    client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.2")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
                 }
                 if (elasitcserachConfig.getProperty("cluster.address.3") != null) {
-                    client.addTransportAddress(new TransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.3")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
+                    client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasitcserachConfig.getProperty("cluster.address.3")), Integer.parseInt(elasitcserachConfig.getProperty("cluster.port"))));
                 }
             }
 
